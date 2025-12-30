@@ -1,0 +1,2432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-in Chaos | Floatist</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Press Start 2P', monospace;
+            color: #fff;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            position: relative;
+            image-rendering: pixelated;
+        }
+        
+        #gameCanvas {
+            border: 4px solid #4a4a6a;
+            border-radius: 4px;
+            image-rendering: pixelated;
+            background: #87CEEB;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .stat-box {
+            background: rgba(0,0,0,0.8);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            border: 2px solid #4a4a6a;
+        }
+        
+        .bonus-indicator {
+            background: linear-gradient(135deg, #00a8ff, #0066cc);
+            border-color: #00a8ff;
+        }
+        
+        .stars {
+            color: #ffd700;
+        }
+        
+        .bad-star {
+            color: #ff4444;
+        }
+        
+        .floatist-bonus-active {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #00a8ff, #0066cc);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 10px;
+            text-align: center;
+            border: 3px solid #fff;
+            animation: bonusPulse 0.5s ease-in-out infinite alternate;
+            z-index: 20;
+            display: none;
+            box-shadow: 0 0 20px rgba(0, 168, 255, 0.5);
+        }
+        
+        @keyframes bonusPulse {
+            from { transform: translateX(-50%) scale(1); box-shadow: 0 0 20px rgba(0, 168, 255, 0.5); }
+            to { transform: translateX(-50%) scale(1.02); box-shadow: 0 0 30px rgba(0, 168, 255, 0.8); }
+        }
+        
+        @keyframes pulse {
+            from { transform: translate(-50%, -50%) scale(1); }
+            to { transform: translate(-50%, -50%) scale(1.05); }
+        }
+        
+        /* Notification popup */
+        .notification {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #00a8ff, #0066cc);
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 10px;
+            text-align: center;
+            border: 3px solid #fff;
+            z-index: 25;
+            display: none;
+            max-width: 350px;
+            line-height: 1.8;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        
+        .star-lost-notification {
+            background: linear-gradient(135deg, #ff6b6b, #cc0000);
+        }
+        
+        .star-lost-notification .dismiss-btn {
+            color: #cc0000;
+        }
+        
+        .star-regained-notification {
+            background: linear-gradient(135deg, #ffd700, #ff9800);
+            animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 1.5s forwards;
+        }
+        
+        .new-boat-notification {
+            background: linear-gradient(135deg, #26c6da, #0097a7);
+            animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 2s forwards;
+        }
+        
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+        
+        .dismiss-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 10px 20px;
+            background: #fff;
+            color: #0066cc;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+            transition: all 0.2s;
+        }
+        
+        .dismiss-btn:hover {
+            background: #e0e0e0;
+            transform: scale(1.05);
+        }
+        
+        /* Pause overlay */
+        .pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 24;
+            display: none;
+        }
+        
+        /* Menu Screens */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            z-index: 100;
+        }
+        
+        .screen.hidden {
+            display: none;
+        }
+        
+        .title {
+            font-size: 24px;
+            color: #00a8ff;
+            text-shadow: 3px 3px 0 #0066cc;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 40px;
+        }
+        
+        .menu-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            padding: 15px 30px;
+            margin: 10px;
+            background: #00a8ff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 4px solid #0066cc;
+        }
+        
+        .menu-btn:hover {
+            background: #33bbff;
+            transform: translateY(-2px);
+        }
+        
+        .menu-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+        
+        .name-input {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            padding: 15px 20px;
+            margin: 20px;
+            background: #2a2a4e;
+            color: #fff;
+            border: 3px solid #4a4a6a;
+            border-radius: 4px;
+            text-align: center;
+            width: 280px;
+        }
+        
+        .name-input:focus {
+            outline: none;
+            border-color: #00a8ff;
+        }
+        
+        .name-label {
+            font-size: 12px;
+            color: #00a8ff;
+            margin-bottom: 5px;
+        }
+        
+        .leaderboard {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            width: 350px;
+        }
+        
+        .leaderboard h3 {
+            font-size: 14px;
+            color: #ffd700;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .leaderboard-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .rank {
+            color: #888;
+            width: 30px;
+        }
+        
+        .rank.gold { color: #ffd700; }
+        .rank.silver { color: #c0c0c0; }
+        .rank.bronze { color: #cd7f32; }
+        
+        .player-name {
+            flex: 1;
+            margin: 0 10px;
+        }
+        
+        .score {
+            color: #00a8ff;
+        }
+        
+        /* Game Over */
+        .game-over-title {
+            font-size: 20px;
+            color: #ff4444;
+            text-shadow: 2px 2px 0 #aa0000;
+            margin-bottom: 10px;
+        }
+        
+        .game-over-reason {
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 400px;
+            line-height: 1.8;
+        }
+        
+        .final-score {
+            font-size: 16px;
+            color: #ffd700;
+            margin-bottom: 30px;
+        }
+        
+        /* CTA Popup */
+        .cta-popup {
+            position: relative;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #00a8ff;
+            border-radius: 12px;
+            padding: 30px 40px;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0, 168, 255, 0.3);
+        }
+        
+        .cta-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .cta-close:hover {
+            color: #fff;
+        }
+        
+        .cta-section {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+        
+        .cta-text {
+            font-size: 12px;
+            color: #00a8ff;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .cta-btn {
+            display: inline-block;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #00a8ff, #0066cc);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 4px solid #004999;
+        }
+        
+        .cta-btn:hover {
+            background: linear-gradient(135deg, #33bbff, #0088ee);
+            transform: translateY(-2px);
+        }
+        
+        .cta-menu-btn {
+            background: linear-gradient(135deg, #00a8ff, #0066cc);
+            border-bottom-color: #004999;
+            text-decoration: none;
+        }
+        
+        .cta-menu-btn:hover {
+            background: linear-gradient(135deg, #33bbff, #0088ee);
+        }
+        
+        /* Coins display */
+        .coins-box {
+            background: linear-gradient(135deg, #ffd700, #ff9800) !important;
+            color: #333 !important;
+        }
+        
+        /* Shop hint */
+        .shop-hint {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background: linear-gradient(135deg, #9c27b0, #673ab7);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 8px;
+            z-index: 10;
+            display: none;
+            animation: shopPulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes shopPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        /* Floatist permanent indicator */
+        .floatist-permanent {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #00c853, #00e676);
+            padding: 6px 15px;
+            border-radius: 4px;
+            font-size: 8px;
+            color: #fff;
+            z-index: 10;
+            display: none;
+            box-shadow: 0 0 15px rgba(0, 200, 83, 0.5);
+        }
+        
+        /* Shop popup */
+        .shop-popup {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .shop-content {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #9c27b0;
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 0 40px rgba(156, 39, 176, 0.4);
+        }
+        
+        .shop-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .shop-close:hover {
+            color: #fff;
+        }
+        
+        .shop-title {
+            font-size: 16px;
+            color: #9c27b0;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .shop-balance {
+            text-align: center;
+            font-size: 12px;
+            color: #ffd700;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 6px;
+        }
+        
+        .shop-items {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .shop-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+        
+        .shop-item-premium {
+            border-color: #00a8ff;
+            background: rgba(0, 168, 255, 0.1);
+        }
+        
+        .shop-item-icon {
+            font-size: 24px;
+            width: 40px;
+            text-align: center;
+        }
+        
+        .shop-item-info {
+            flex: 1;
+        }
+        
+        .shop-item-name {
+            font-size: 10px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        
+        .shop-item-desc {
+            font-size: 7px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        
+        .shop-item-owned {
+            font-size: 7px;
+            color: #4caf50;
+        }
+        
+        .shop-buy-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #ffd700, #ff9800);
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 3px solid #cc7700;
+        }
+        
+        .shop-buy-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #ffeb3b, #ffb300);
+        }
+        
+        .shop-buy-btn:disabled {
+            background: #444;
+            color: #666;
+            cursor: not-allowed;
+            border-bottom-color: #333;
+        }
+        
+        .shop-buy-premium {
+            background: linear-gradient(135deg, #00a8ff, #0066cc);
+            color: #fff;
+            border-bottom-color: #004999;
+        }
+        
+        .shop-buy-premium:hover:not(:disabled) {
+            background: linear-gradient(135deg, #33bbff, #0088ee);
+        }
+        
+        .shop-hint-text {
+            text-align: center;
+            font-size: 7px;
+            color: #666;
+            margin-top: 15px;
+        }
+        
+        /* Trial offer popup */
+        .trial-offer-text {
+            text-align: center;
+            font-size: 11px;
+            line-height: 1.8;
+            margin: 20px 0;
+        }
+        
+        .trial-offer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        /* Assistant active indicator */
+        .assistant-active {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 8px;
+            z-index: 10;
+            display: none;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        
+        /* Coin notification */
+        .coin-notification {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ffd700, #ff9800);
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 20;
+            display: none;
+            animation: coinPop 0.5s ease-out;
+        }
+        
+        @keyframes coinPop {
+            0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
+            50% { transform: translateX(-50%) scale(1.2); }
+            100% { transform: translateX(-50%) scale(1); opacity: 1; }
+        }
+        
+        /* Phone ringing indicator */
+        .phone-warning {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4444;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 10px;
+            animation: shake 0.1s ease-in-out infinite;
+            z-index: 15;
+            display: none;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(-50%) rotate(-2deg); }
+            50% { transform: translateX(-50%) rotate(2deg); }
+        }
+        
+        /* Instructions */
+        .instructions {
+            font-size: 8px;
+            color: #666;
+            margin-top: 30px;
+            text-align: center;
+            line-height: 2.2;
+        }
+        
+        .key {
+            background: #333;
+            padding: 4px 8px;
+            border-radius: 3px;
+            border-bottom: 2px solid #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="ui-overlay" id="uiOverlay" style="display: none;">
+            <div class="stat-box">
+                <span id="playerNameDisplay">Player</span>
+            </div>
+            <div class="stat-box">
+                CHECKED IN: <span id="checkedIn">0</span>
+            </div>
+            <div class="stat-box coins-box">
+                🪙 <span id="coinCount">0</span>
+            </div>
+            <div class="stat-box">
+                ⛵ BOATS: <span id="boatCount">5</span>
+            </div>
+            <div class="stat-box bonus-indicator" id="bonusIndicator">
+                ⚓ BONUS: <span id="bonusCount">0</span> <span style="color: #aaa; font-size: 8px;">[F]</span>
+            </div>
+            <div class="stat-box">
+                RATING: <span id="rating" class="stars">★★★★★</span>
+            </div>
+        </div>
+        
+        <div class="shop-hint" id="shopHint">
+            🏪 SHOP [E]
+        </div>
+        
+        <div class="floatist-bonus-active" id="floatistBonusActive">
+            ⚓ FLOATIST ACTIVE! ⚓<br>
+            <small>Mass pickup & delivery enabled!</small><br>
+            <small style="color: #ffd700;">Serve 3+ fast = regain ★!</small>
+        </div>
+        
+        <div class="floatist-permanent" id="floatistPermanent">
+            ⚓ FLOATIST INSTALLED ⚓
+        </div>
+        
+        <div class="pause-overlay" id="pauseOverlay"></div>
+        
+        <!-- Shop Popup -->
+        <div class="shop-popup" id="shopPopup" style="display: none;">
+            <div class="shop-content">
+                <button class="shop-close" onclick="closeShop()">✕</button>
+                <div class="shop-title">🏪 MARINA SHOP</div>
+                <div class="shop-balance">Your coins: 🪙 <span id="shopCoinCount">0</span></div>
+                
+                <div class="shop-items">
+                    <div class="shop-item" id="hireAssistantItem">
+                        <div class="shop-item-icon">📞</div>
+                        <div class="shop-item-info">
+                            <div class="shop-item-name">Office Assistant</div>
+                            <div class="shop-item-desc">Handles all phone calls for 20 seconds</div>
+                            <div class="shop-item-owned" id="assistantStatus">Ready to hire</div>
+                        </div>
+                        <button class="shop-buy-btn" id="buyAssistantBtn" onclick="buyAssistant()">
+                            🪙 30
+                        </button>
+                    </div>
+                    
+                    <div class="shop-item shop-item-premium" id="buyFloatistItem">
+                        <div class="shop-item-icon">⚓</div>
+                        <div class="shop-item-info">
+                            <div class="shop-item-name">Buy Floatist</div>
+                            <div class="shop-item-desc">Permanent bonus mode forever!</div>
+                            <div class="shop-item-owned" id="floatistStatus">Not purchased</div>
+                        </div>
+                        <button class="shop-buy-btn shop-buy-premium" id="buyFloatistBtn" onclick="buyFloatist()">
+                            🪙 200
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="shop-hint-text">Press E or click ✕ to close</div>
+            </div>
+        </div>
+        
+        <!-- Floatist Trial Offer Popup -->
+        <div class="shop-popup" id="trialOfferPopup" style="display: none;">
+            <div class="shop-content">
+                <button class="shop-close" onclick="dismissTrialOffer()">✕</button>
+                <div class="shop-title">⚓ SPECIAL OFFER! ⚓</div>
+                <div class="trial-offer-text">
+                    You've checked in 75 guests!<br><br>
+                    Want to try <span style="color: #00a8ff;">Floatist</span> for 30 seconds?
+                </div>
+                <div class="trial-offer-buttons">
+                    <button class="shop-buy-btn shop-buy-premium" id="buyTrialBtn" onclick="buyFloatistTrial()">
+                        🪙 75 - TRY IT!
+                    </button>
+                    <button class="dismiss-btn" onclick="dismissTrialOffer()">No thanks</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Coin Earned Notification -->
+        <div class="coin-notification" id="coinNotification">
+            +<span id="coinsEarned">0</span> 🪙
+        </div>
+        
+        <!-- Assistant Active Indicator -->
+        <div class="assistant-active" id="assistantActive">
+            📞 ASSISTANT ACTIVE (<span id="assistantTimer">20</span>s)
+        </div>
+        
+        <div class="notification" id="bonusNotification">
+            ⚓ FLOATIST BONUS UNLOCKED! ⚓<br><br>
+            Every 10 guests = 1 bonus (max 10)<br>
+            Press <span class="key">F</span> to activate!<br><br>
+            <small>• See all requests at once<br>
+            • Grab ALL needed items with one click<br>
+            • Deliver to ALL guests with one click<br>
+            • Extended guest patience!</small><br><br>
+            <button class="dismiss-btn" onclick="dismissBonusNotification()">GOT IT!</button>
+        </div>
+        
+        <div class="phone-warning" id="phoneWarning">
+            📞 PHONE RINGING! RUN TO OFFICE! 📞
+        </div>
+        
+        <div class="notification star-lost-notification" id="starLostNotification">
+            ⭐ RATING DROPPED! ⭐<br><br>
+            <span id="starLostReason">You missed a phone call!</span><br><br>
+            <small>Miss phone calls or leave guests waiting<br>too long and your rating drops.<br><br>
+            Lose all 5 stars = Game Over!</small><br><br>
+            <button class="dismiss-btn" onclick="dismissStarLostNotification()">GOT IT!</button>
+        </div>
+        
+        <div class="notification star-regained-notification" id="starRegainedNotification">
+            🌟 STAR REGAINED! 🌟<br><br>
+            <small>Great work serving multiple guests quickly!</small>
+        </div>
+        
+        <div class="notification new-boat-notification" id="newBoatNotification">
+            ⛵ NEW BOAT ADDED! ⛵<br><br>
+            <small>Your marina is growing!<br>Boat #<span id="newBoatNumber">6</span> has arrived!</small>
+        </div>
+        
+        <!-- Main Menu -->
+        <div class="screen" id="mainMenu">
+            <div class="title">CHECK-IN CHAOS</div>
+            <div class="subtitle">A Floatist Experience</div>
+            <div class="name-label">ENTER YOUR NAME</div>
+            <input type="text" class="name-input" id="playerNameInput" placeholder="Captain" maxlength="15" autofocus>
+            <button class="menu-btn" id="playBtn">▶ PLAY</button>
+            <button class="menu-btn" id="leaderboardBtn">🏆 LEADERBOARD</button>
+            <div class="instructions">
+                <span class="key">↑</span> <span class="key">↓</span> <span class="key">←</span> <span class="key">→</span> to move<br>
+                <span class="key">SPACE</span> to pick up / drop items / answer phone<br>
+                <span class="key">F</span> to activate Floatist bonus<br>
+                <span class="key">E</span> to open shop (when near)
+            </div>
+        </div>
+        
+        <!-- Leaderboard Screen -->
+        <div class="screen hidden" id="leaderboardScreen">
+            <div class="title" style="font-size: 18px;">🏆 LEADERBOARD</div>
+            <div class="leaderboard" id="leaderboardList"></div>
+            <button class="menu-btn" id="backBtn">← BACK</button>
+        </div>
+        
+        <!-- Game Over CTA Popup -->
+        <div class="screen hidden" id="gameOverCTA">
+            <div class="cta-popup">
+                <button class="cta-close" id="ctaCloseBtn">✕</button>
+                <div class="game-over-title">GAME OVER</div>
+                <div class="game-over-reason">
+                    Your rating dropped to zero stars!<br>
+                    No one wants to book with you anymore.<br>
+                    Your charter company is bankrupt.
+                </div>
+                <div class="final-score">
+                    Guests checked in: <span id="finalScoreCTA">0</span>
+                </div>
+                <div class="cta-section">
+                    <div class="cta-text">Want to get rid of this stress in real life?</div>
+                    <a href="https://meetings-eu1.hubspot.com/ante-kljenak" target="_blank" class="cta-btn">
+                        📅 BOOK A DEMO WITH ANTE
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Over Screen (after dismissing CTA) -->
+        <div class="screen hidden" id="gameOverScreen">
+            <div class="game-over-title">GAME OVER</div>
+            <div class="game-over-reason" id="gameOverReason">
+                Your rating dropped to zero stars!<br>
+                No one wants to book with you anymore.<br>
+                Your charter company is bankrupt.
+            </div>
+            <div class="final-score">
+                Guests checked in: <span id="finalScore">0</span>
+            </div>
+            <div class="leaderboard" id="gameOverLeaderboard"></div>
+            <button class="menu-btn" id="retryBtn">↻ TRY AGAIN</button>
+            <button class="menu-btn" id="menuBtn">← MENU</button>
+            <a href="https://meetings-eu1.hubspot.com/ante-kljenak" target="_blank" class="menu-btn cta-menu-btn">
+                📅 BOOK A DEMO
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ========== GAME CONSTANTS ==========
+        const TILE_SIZE = 32;
+        const MAP_WIDTH = 25;
+        const MAP_HEIGHT = 18;
+        const PLAYER_SPEED = 6; // Faster, consistent movement
+        const GUEST_PATIENCE = 10000; // 10 seconds normally
+        const GUEST_PATIENCE_BONUS = 17000; // 17 seconds during Floatist bonus
+        const INITIAL_PHONE_INTERVAL = 20000; // 20 seconds at start
+        const MIN_PHONE_INTERVAL = 8000; // 8 seconds minimum
+        const PHONE_ACCELERATION = 400; // ms faster per guest checked in
+        const PHONE_TIMEOUT = 5000; // 5 seconds to answer
+        const FLOATIST_BONUS_DURATION = 7000; // 7 seconds
+        const FLOATIST_BONUS_THRESHOLD = 10; // guests needed per bonus
+        const MAX_BONUSES = 10; // maximum bonuses player can hold
+        const FLOATIST_PURCHASE_COST = 200; // coins to buy permanent Floatist
+        const FLOATIST_TRIAL_COST = 75; // coins for 30 second trial
+        const FLOATIST_TRIAL_DURATION = 30000; // 30 seconds trial
+        const ASSISTANT_COST = 30; // coins for office assistant
+        const ASSISTANT_DURATION = 20000; // 20 seconds
+        const TRIAL_OFFER_THRESHOLD = 75; // check-ins before trial offer
+        
+        // Spawn timing - faster pacing with quicker acceleration
+        const INITIAL_SPAWN_INTERVAL = 5000; // 5 seconds at start
+        const MIN_SPAWN_INTERVAL = 1800; // 1.8 seconds minimum (faster)
+        const SPAWN_ACCELERATION = 120; // ms faster per guest checked in (faster acceleration)
+        
+        // ========== GAME STATE ==========
+        let gameState = {
+            screen: 'menu',
+            playerName: '',
+            player: { x: 400, y: 300, holding: [], direction: 'down' },
+            guests: [],
+            checkedIn: 0,
+            stars: 5, // Rating starts at 5 stars
+            coins: 0, // Currency for shop
+            assistantActive: false, // Office assistant handling phones
+            assistantTimer: 0, // Time remaining for assistant
+            floatistPurchased: false, // Permanent Floatist mode
+            floatistTrialActive: false, // Trial mode
+            floatistTrialTimer: 0,
+            trialOfferShown: false, // Whether we've shown the 75 check-in offer
+            phoneRinging: false,
+            phoneTimer: null,
+            phoneTimeout: null,
+            floatistBonusActive: false,
+            floatistBonusCount: 0,
+            floatistBonusTimer: null,
+            totalDeliveries: 0,
+            bonusNotificationShown: false,
+            starLostNotificationShown: false,
+            shopOpen: false,
+            gamePaused: false,
+            lastPhoneTime: 0,
+            gameStartTime: 0,
+            currentSpawnInterval: INITIAL_SPAWN_INTERVAL,
+            currentPhoneInterval: INITIAL_PHONE_INTERVAL
+        };
+        
+        // ========== SUPABASE CONFIG ==========
+        const SUPABASE_URL = 'https://hxprgujtxegryhytzxik.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4cHJndWp0eGVncnloeXR6eGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwOTI2MTYsImV4cCI6MjA4MjY2ODYxNn0.WdPmqtHwmqUFfX140mlLtA6sT4L7Sq6K3gPRXQXu3dg';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // ========== LEADERBOARD ==========
+        let leaderboard = [];
+        
+        // Load leaderboard from Supabase
+        async function loadLeaderboard() {
+            try {
+                const { data, error } = await supabase
+                    .from('leaderboard')
+                    .select('name, score, created_at')
+                    .order('score', { ascending: false })
+                    .limit(50);
+                
+                if (error) throw error;
+                leaderboard = data || [];
+            } catch (err) {
+                console.error('Failed to load leaderboard:', err);
+                // Fall back to localStorage if Supabase fails
+                leaderboard = JSON.parse(localStorage.getItem('floatistLeaderboard') || '[]');
+            }
+        }
+        
+        // Save score to Supabase
+        async function saveScore(name, score) {
+            try {
+                const { error } = await supabase
+                    .from('leaderboard')
+                    .insert([{ name, score }]);
+                
+                if (error) throw error;
+                
+                // Reload leaderboard after saving
+                await loadLeaderboard();
+            } catch (err) {
+                console.error('Failed to save score:', err);
+                // Fall back to localStorage
+                leaderboard.push({ name, score, created_at: new Date().toISOString() });
+                leaderboard.sort((a, b) => b.score - a.score);
+                leaderboard = leaderboard.slice(0, 50);
+                localStorage.setItem('floatistLeaderboard', JSON.stringify(leaderboard));
+            }
+        }
+        
+        function renderLeaderboard(containerId) {
+            const container = document.getElementById(containerId);
+            if (leaderboard.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #666; font-size: 10px;">No scores yet. Be the first!</div>';
+                return;
+            }
+            container.innerHTML = '<h3>🏆 TOP CAPTAINS</h3>' + leaderboard.slice(0, 10).map((entry, i) => {
+                const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+                return `<div class="leaderboard-entry">
+                    <span class="rank ${rankClass}">#${i + 1}</span>
+                    <span class="player-name">${entry.name}</span>
+                    <span class="score">${entry.score} guests</span>
+                </div>`;
+            }).join('');
+        }
+        
+        // Load leaderboard on page load
+        loadLeaderboard();
+        
+        // ========== ITEMS DEFINITION ==========
+        const ITEMS = [
+            { id: 'lifevest', name: 'Life Vest', emoji: '🦺', color: '#ff6b35', location: 'storage' },
+            { id: 'bbq', name: 'BBQ', emoji: '🍖', color: '#8b4513', location: 'storage' },
+            { id: 'snorkel', name: 'Snorkel', emoji: '🤿', color: '#2196f3', location: 'storage' },
+            { id: 'towels', name: 'Towels', emoji: '🏖️', color: '#e91e63', location: 'storage' },
+            { id: 'cooler', name: 'Cooler', emoji: '🧊', color: '#03a9f4', location: 'storage' },
+            { id: 'fishing', name: 'Fishing Gear', emoji: '🎣', color: '#795548', location: 'storage' },
+            { id: 'sup', name: 'SUP Board', emoji: '🏄', color: '#00bcd4', location: 'watertoys' },
+            { id: 'kayak', name: 'Kayak', emoji: '🛶', color: '#ff9800', location: 'watertoys' }
+        ];
+        
+        // Item spawn positions on map (spread out for selection)
+        const itemSpawns = [
+            // Storage area items - spread out horizontally
+            { x: 18, y: 6, itemId: 'lifevest' },
+            { x: 19.5, y: 6, itemId: 'snorkel' },
+            { x: 21, y: 6, itemId: 'towels' },
+            { x: 18, y: 7.5, itemId: 'cooler' },
+            { x: 19.5, y: 7.5, itemId: 'bbq' },
+            { x: 21, y: 7.5, itemId: 'fishing' },
+            // Water toys area - spread out
+            { x: 3, y: 14, itemId: 'sup' },
+            { x: 5, y: 14, itemId: 'kayak' }
+        ];
+        
+        // Map layout
+        const mapLayout = {
+            office: { x: 2, y: 2, w: 4, h: 3 },
+            storage: { x: 17, y: 2, w: 6, h: 4 },
+            waterToys: { x: 2, y: 12, w: 5, h: 3 },
+            shop: { x: 7, y: 8, w: 3, h: 3 }, // New shop building
+            pier: { x: 12, y: 8, w: 10, h: 2 },
+            // All possible boat positions (unlocked progressively)
+            allBoatPositions: [
+                { x: 13, y: 10, id: 1 },
+                { x: 16, y: 10, id: 2 },
+                { x: 19, y: 10, id: 3 },
+                { x: 13, y: 13, id: 4 },
+                { x: 16, y: 13, id: 5 },
+                { x: 19, y: 13, id: 6 },
+                { x: 22, y: 10, id: 7 },
+                { x: 22, y: 13, id: 8 }
+            ],
+            gate: { x: 12, y: 16 }
+        };
+        
+        // Active boats (starts with 5, grows every 10 deliveries)
+        let activeBoatCount = 5;
+        
+        // ========== CANVAS & RENDERING ==========
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        
+        // Colors
+        const COLORS = {
+            water: '#4a90a4',
+            waterLight: '#5da0b4',
+            grass: '#7cb342',
+            grassDark: '#689f38',
+            dock: '#8d6e63',
+            dockLight: '#a1887f',
+            building: '#78909c',
+            buildingDark: '#546e7a',
+            roof: '#455a64',
+            path: '#d7ccc8',
+            pathDark: '#bcaaa4',
+            gate: '#ffd54f',
+            itemHighlight: '#ffeb3b'
+        };
+        
+        function drawPixelRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
+        }
+        
+        function drawMap() {
+            const time = Date.now() * 0.001;
+            
+            // Water background with animated waves
+            for (let y = 0; y < canvas.height; y += 8) {
+                for (let x = 0; x < canvas.width; x += 8) {
+                    const wave1 = Math.sin((x * 0.05) + (y * 0.03) + time) * 0.5 + 0.5;
+                    const wave2 = Math.sin((x * 0.03) - (y * 0.05) + time * 1.3) * 0.3;
+                    const brightness = 0.4 + wave1 * 0.2 + wave2 * 0.1;
+                    const r = Math.floor(74 * brightness);
+                    const g = Math.floor(144 * brightness + 20);
+                    const b = Math.floor(180 * brightness + 30);
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.fillRect(x, y, 8, 8);
+                }
+            }
+            
+            // Draw some water sparkles
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            for (let i = 0; i < 15; i++) {
+                const sparkleX = ((i * 97 + Math.floor(time * 50)) % 400) + 400;
+                const sparkleY = ((i * 73 + Math.floor(time * 30)) % 300) + 250;
+                if (sparkleX > 320) {
+                    ctx.fillRect(sparkleX, sparkleY, 3, 3);
+                }
+            }
+            
+            // Sandy beach edge
+            ctx.fillStyle = '#e8d4a8';
+            drawPixelRect(9 * TILE_SIZE, 7 * TILE_SIZE, TILE_SIZE * 2, TILE_SIZE, '#e8d4a8');
+            drawPixelRect(10 * TILE_SIZE, 6 * TILE_SIZE, TILE_SIZE, TILE_SIZE * 2, '#e8d4a8');
+            
+            // Main land area (grass) with gradient
+            const grassGradient = ctx.createLinearGradient(0, 0, 0, 18 * TILE_SIZE);
+            grassGradient.addColorStop(0, '#8bc34a');
+            grassGradient.addColorStop(0.5, '#7cb342');
+            grassGradient.addColorStop(1, '#689f38');
+            ctx.fillStyle = grassGradient;
+            ctx.fillRect(0, 0, 10 * TILE_SIZE, 18 * TILE_SIZE);
+            
+            ctx.fillStyle = '#7cb342';
+            drawPixelRect(10 * TILE_SIZE, 0, 15 * TILE_SIZE, 8 * TILE_SIZE, '#7cb342');
+            
+            // Grass texture with varied shades (deterministic positions for no strobing)
+            const grassColors = ['#689f38', '#558b2f', '#7cb342', '#9ccc65'];
+            for (let i = 0; i < 200; i++) {
+                // Use deterministic pseudo-random based on index
+                const gx = ((i * 97 + 13) % (10 * TILE_SIZE - 4)) + 2;
+                const gy = ((i * 53 + 7) % (18 * TILE_SIZE - 6)) + 2;
+                const colorIdx = i % grassColors.length;
+                const height = 3 + (i % 4);
+                ctx.fillStyle = grassColors[colorIdx];
+                ctx.fillRect(gx, gy, 2, height);
+            }
+            for (let i = 0; i < 120; i++) {
+                const gx = 10 * TILE_SIZE + ((i * 83 + 11) % (14 * TILE_SIZE - 4)) + 2;
+                const gy = ((i * 47 + 3) % (7 * TILE_SIZE - 6)) + 2;
+                const colorIdx = (i + 2) % grassColors.length;
+                const height = 3 + (i % 4);
+                ctx.fillStyle = grassColors[colorIdx];
+                ctx.fillRect(gx, gy, 2, height);
+            }
+            
+            // Flowers scattered on grass (already deterministic)
+            const flowerColors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6b9d'];
+            for (let i = 0; i < 25; i++) {
+                const fx = (i * 37) % (9 * TILE_SIZE) + 10;
+                const fy = (i * 53) % (16 * TILE_SIZE) + 32;
+                ctx.fillStyle = flowerColors[i % flowerColors.length];
+                ctx.beginPath();
+                ctx.arc(fx, fy, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff176';
+                ctx.beginPath();
+                ctx.arc(fx, fy, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Trees (decorative, along edges)
+            drawTree(0.5 * TILE_SIZE, 0.5 * TILE_SIZE);
+            drawTree(7.5 * TILE_SIZE, 1 * TILE_SIZE);
+            drawTree(1 * TILE_SIZE, 8 * TILE_SIZE);
+            drawTree(8 * TILE_SIZE, 10 * TILE_SIZE);
+            drawTree(0.5 * TILE_SIZE, 16 * TILE_SIZE);
+            drawTree(14 * TILE_SIZE, 0.5 * TILE_SIZE);
+            drawTree(23 * TILE_SIZE, 1 * TILE_SIZE);
+            
+            // Bushes
+            drawBush(7 * TILE_SIZE, 7 * TILE_SIZE);
+            drawBush(1.5 * TILE_SIZE, 6 * TILE_SIZE);
+            drawBush(8.5 * TILE_SIZE, 1.5 * TILE_SIZE);
+            
+            // Paths with stone pattern
+            drawPath(5 * TILE_SIZE, 5 * TILE_SIZE, 7 * TILE_SIZE, TILE_SIZE);
+            drawPath(11 * TILE_SIZE, 5 * TILE_SIZE, TILE_SIZE, 12 * TILE_SIZE);
+            drawPath(11 * TILE_SIZE, 16 * TILE_SIZE, TILE_SIZE, 2 * TILE_SIZE);
+            drawPath(5 * TILE_SIZE, 5 * TILE_SIZE, TILE_SIZE, 10 * TILE_SIZE);
+            drawPath(12 * TILE_SIZE, 5 * TILE_SIZE, 6 * TILE_SIZE, TILE_SIZE);
+            
+            // Office building with more detail
+            const office = mapLayout.office;
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.fillRect(office.x * TILE_SIZE + 6, office.y * TILE_SIZE + 6, office.w * TILE_SIZE, office.h * TILE_SIZE);
+            // Main building
+            const officeGrad = ctx.createLinearGradient(office.x * TILE_SIZE, 0, (office.x + office.w) * TILE_SIZE, 0);
+            officeGrad.addColorStop(0, '#90a4ae');
+            officeGrad.addColorStop(1, '#78909c');
+            ctx.fillStyle = officeGrad;
+            ctx.fillRect(office.x * TILE_SIZE, office.y * TILE_SIZE, office.w * TILE_SIZE, office.h * TILE_SIZE);
+            // Roof
+            ctx.fillStyle = '#455a64';
+            ctx.fillRect(office.x * TILE_SIZE - 4, office.y * TILE_SIZE - 4, office.w * TILE_SIZE + 8, 12);
+            // Windows
+            ctx.fillStyle = '#81d4fa';
+            ctx.fillRect((office.x + 0.3) * TILE_SIZE, (office.y + 0.8) * TILE_SIZE, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+            ctx.fillRect((office.x + 2.8) * TILE_SIZE, (office.y + 0.8) * TILE_SIZE, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+            // Window frames
+            ctx.strokeStyle = '#37474f';
+            ctx.lineWidth = 1;
+            ctx.strokeRect((office.x + 0.3) * TILE_SIZE, (office.y + 0.8) * TILE_SIZE, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+            ctx.strokeRect((office.x + 2.8) * TILE_SIZE, (office.y + 0.8) * TILE_SIZE, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+            // Door
+            ctx.fillStyle = '#5d4037';
+            ctx.fillRect((office.x + 1.5) * TILE_SIZE, (office.y + office.h - 1.2) * TILE_SIZE, TILE_SIZE * 0.8, TILE_SIZE * 1.2);
+            ctx.fillStyle = '#ffeb3b';
+            ctx.beginPath();
+            ctx.arc((office.x + 2.1) * TILE_SIZE, (office.y + office.h - 0.5) * TILE_SIZE, 3, 0, Math.PI * 2);
+            ctx.fill();
+            // Phone indicator
+            if (gameState.phoneRinging) {
+                const phoneX = (office.x + 3.2) * TILE_SIZE;
+                const phoneY = (office.y + 1.2) * TILE_SIZE;
+                // Ringing effect
+                ctx.fillStyle = `rgba(255,0,0,${0.5 + Math.sin(time * 10) * 0.3})`;
+                ctx.beginPath();
+                ctx.arc(phoneX + 10, phoneY + 10, 15 + Math.sin(time * 15) * 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.font = '20px Arial';
+                ctx.fillText('📞', phoneX, phoneY + 20);
+            }
+            // Label
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px "Press Start 2P"';
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 2;
+            ctx.fillText('OFFICE', (office.x + 0.5) * TILE_SIZE, (office.y - 0.5) * TILE_SIZE);
+            ctx.shadowBlur = 0;
+            
+            // Storage building
+            const storage = mapLayout.storage;
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.fillRect(storage.x * TILE_SIZE + 6, storage.y * TILE_SIZE + 6, storage.w * TILE_SIZE, storage.h * TILE_SIZE);
+            // Main building
+            ctx.fillStyle = '#a1887f';
+            ctx.fillRect(storage.x * TILE_SIZE, storage.y * TILE_SIZE, storage.w * TILE_SIZE, storage.h * TILE_SIZE);
+            // Wooden slats
+            ctx.fillStyle = '#8d6e63';
+            for (let sx = 0; sx < storage.w; sx++) {
+                ctx.fillRect((storage.x + sx) * TILE_SIZE + 2, storage.y * TILE_SIZE, 2, storage.h * TILE_SIZE);
+            }
+            // Roof
+            ctx.fillStyle = '#6d4c41';
+            ctx.fillRect(storage.x * TILE_SIZE - 4, storage.y * TILE_SIZE - 4, storage.w * TILE_SIZE + 8, 12);
+            // Open door
+            ctx.fillStyle = '#3e2723';
+            ctx.fillRect((storage.x + 2) * TILE_SIZE, (storage.y + storage.h - 1.5) * TILE_SIZE, TILE_SIZE * 2, TILE_SIZE * 1.5);
+            // Label
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 2;
+            ctx.fillText('STORAGE', (storage.x + 1) * TILE_SIZE, (storage.y - 0.5) * TILE_SIZE);
+            ctx.shadowBlur = 0;
+            
+            // Water toys area (wooden deck)
+            const waterToys = mapLayout.waterToys;
+            ctx.fillStyle = '#a1887f';
+            ctx.fillRect(waterToys.x * TILE_SIZE, waterToys.y * TILE_SIZE, waterToys.w * TILE_SIZE, waterToys.h * TILE_SIZE);
+            // Deck planks
+            ctx.fillStyle = '#8d6e63';
+            for (let ty = 0; ty < waterToys.h * 2; ty++) {
+                ctx.fillRect(waterToys.x * TILE_SIZE, (waterToys.y + ty * 0.5) * TILE_SIZE, waterToys.w * TILE_SIZE, 2);
+            }
+            // Railing
+            ctx.fillStyle = '#5d4037';
+            ctx.fillRect(waterToys.x * TILE_SIZE, waterToys.y * TILE_SIZE - 4, waterToys.w * TILE_SIZE, 4);
+            // Label
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 2;
+            ctx.fillText('TOYS', (waterToys.x + 1.2) * TILE_SIZE, (waterToys.y - 0.5) * TILE_SIZE);
+            ctx.shadowBlur = 0;
+            
+            // Shop building
+            const shop = mapLayout.shop;
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.fillRect(shop.x * TILE_SIZE + 6, shop.y * TILE_SIZE + 6, shop.w * TILE_SIZE, shop.h * TILE_SIZE);
+            // Main building
+            ctx.fillStyle = '#9c27b0';
+            ctx.fillRect(shop.x * TILE_SIZE, shop.y * TILE_SIZE, shop.w * TILE_SIZE, shop.h * TILE_SIZE);
+            // Roof
+            ctx.fillStyle = '#7b1fa2';
+            ctx.fillRect(shop.x * TILE_SIZE - 4, shop.y * TILE_SIZE - 4, shop.w * TILE_SIZE + 8, 12);
+            // Window
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect((shop.x + 0.4) * TILE_SIZE, (shop.y + 0.8) * TILE_SIZE, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+            ctx.fillRect((shop.x + 1.8) * TILE_SIZE, (shop.y + 0.8) * TILE_SIZE, TILE_SIZE * 0.6, TILE_SIZE * 0.6);
+            // Door
+            ctx.fillStyle = '#5d4037';
+            ctx.fillRect((shop.x + 1) * TILE_SIZE, (shop.y + shop.h - 1.2) * TILE_SIZE, TILE_SIZE * 0.8, TILE_SIZE * 1.2);
+            // Shop sign
+            ctx.fillStyle = '#ffd700';
+            ctx.font = '8px "Press Start 2P"';
+            ctx.fillText('🏪', (shop.x + 1) * TILE_SIZE, (shop.y + 0.3) * TILE_SIZE);
+            // Label
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 2;
+            ctx.font = '10px "Press Start 2P"';
+            ctx.fillText('SHOP', (shop.x + 0.3) * TILE_SIZE, (shop.y - 0.5) * TILE_SIZE);
+            ctx.shadowBlur = 0;
+            
+            // Pier with posts
+            const pier = mapLayout.pier;
+            // Main pier
+            ctx.fillStyle = '#a1887f';
+            ctx.fillRect(pier.x * TILE_SIZE, pier.y * TILE_SIZE, pier.w * TILE_SIZE, pier.h * TILE_SIZE);
+            // Pier planks
+            ctx.fillStyle = '#8d6e63';
+            for (let px = pier.x; px < pier.x + pier.w; px++) {
+                ctx.fillRect(px * TILE_SIZE + 1, pier.y * TILE_SIZE, 3, pier.h * TILE_SIZE);
+            }
+            // Pier posts
+            ctx.fillStyle = '#5d4037';
+            for (let post = 0; post < 4; post++) {
+                const postX = (pier.x + post * 3 + 1) * TILE_SIZE;
+                ctx.fillRect(postX, (pier.y + pier.h) * TILE_SIZE - 4, 8, 20);
+                // Post top
+                ctx.fillStyle = '#795548';
+                ctx.fillRect(postX - 2, (pier.y + pier.h) * TILE_SIZE - 6, 12, 4);
+                ctx.fillStyle = '#5d4037';
+            }
+            // Rope along pier
+            ctx.strokeStyle = '#8d6e63';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(pier.x * TILE_SIZE, (pier.y - 0.2) * TILE_SIZE);
+            ctx.lineTo((pier.x + pier.w) * TILE_SIZE, (pier.y - 0.2) * TILE_SIZE);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Boats (only draw active ones)
+            getActiveBoats().forEach(boat => {
+                drawBoat(boat.x * TILE_SIZE, boat.y * TILE_SIZE, boat.id);
+            });
+            
+            // Gate with pillars
+            const gate = mapLayout.gate;
+            // Gate pillars
+            ctx.fillStyle = '#5d4037';
+            ctx.fillRect((gate.x - 1.5) * TILE_SIZE, (gate.y - 0.3) * TILE_SIZE, TILE_SIZE * 0.5, TILE_SIZE * 1.3);
+            ctx.fillRect((gate.x + 1) * TILE_SIZE, (gate.y - 0.3) * TILE_SIZE, TILE_SIZE * 0.5, TILE_SIZE * 1.3);
+            // Gate bar
+            ctx.fillStyle = COLORS.gate;
+            ctx.fillRect((gate.x - 1) * TILE_SIZE, gate.y * TILE_SIZE, 3 * TILE_SIZE, TILE_SIZE * 0.6);
+            // Welcome arch
+            ctx.fillStyle = '#5d4037';
+            ctx.fillRect((gate.x - 1.3) * TILE_SIZE, (gate.y - 0.5) * TILE_SIZE, 3.6 * TILE_SIZE, 6);
+            ctx.fillStyle = '#333';
+            ctx.font = '8px "Press Start 2P"';
+            ctx.fillText('WELCOME', (gate.x - 0.8) * TILE_SIZE, (gate.y + 0.4) * TILE_SIZE);
+            
+            // Draw item spawns
+            drawItemSpawns();
+        }
+        
+        function drawTree(x, y) {
+            // Trunk
+            ctx.fillStyle = '#5d4037';
+            ctx.fillRect(x + 10, y + 20, 12, 20);
+            // Leaves (layered circles)
+            const leafColors = ['#2e7d32', '#388e3c', '#43a047', '#4caf50'];
+            for (let i = 0; i < 4; i++) {
+                ctx.fillStyle = leafColors[i];
+                ctx.beginPath();
+                ctx.arc(x + 16 + (i % 2) * 6 - 3, y + 12 + Math.floor(i / 2) * 8 - 4, 14 - i * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawBush(x, y) {
+            const bushColors = ['#388e3c', '#43a047', '#66bb6a'];
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = bushColors[i];
+                ctx.beginPath();
+                ctx.arc(x + i * 8, y + 4, 10 - i * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawPath(x, y, w, h) {
+            // Base path
+            ctx.fillStyle = '#d7ccc8';
+            ctx.fillRect(x, y, w, h);
+            // Stone pattern
+            ctx.fillStyle = '#bcaaa4';
+            const stoneCount = Math.floor((w * h) / 200);
+            for (let i = 0; i < stoneCount; i++) {
+                const sx = x + (i * 37) % w;
+                const sy = y + (i * 23) % h;
+                ctx.beginPath();
+                ctx.ellipse(sx, sy, 4 + (i % 3), 3 + (i % 2), 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            // Path edge
+            ctx.fillStyle = '#a1887f';
+            if (w > h) {
+                ctx.fillRect(x, y, w, 2);
+                ctx.fillRect(x, y + h - 2, w, 2);
+            } else {
+                ctx.fillRect(x, y, 2, h);
+                ctx.fillRect(x + w - 2, y, 2, h);
+            }
+        }
+        
+        function drawBoat(x, y, id) {
+            const time = Date.now() * 0.001;
+            const bob = Math.sin(time + id) * 2;
+            
+            // Water reflection
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.beginPath();
+            ctx.ellipse(x + TILE_SIZE, y + TILE_SIZE * 2.8 + bob, TILE_SIZE * 0.8, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Hull shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.moveTo(x + 8, y + 12 + bob);
+            ctx.lineTo(x + TILE_SIZE * 2 - 8, y + 12 + bob);
+            ctx.lineTo(x + TILE_SIZE * 2 - 14, y + TILE_SIZE * 2.5 + bob);
+            ctx.lineTo(x + 14, y + TILE_SIZE * 2.5 + bob);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Hull
+            ctx.fillStyle = '#f5f5f5';
+            ctx.beginPath();
+            ctx.moveTo(x + 5, y + 10 + bob);
+            ctx.lineTo(x + TILE_SIZE * 2 - 5, y + 10 + bob);
+            ctx.lineTo(x + TILE_SIZE * 2 - 12, y + TILE_SIZE * 2.3 + bob);
+            ctx.lineTo(x + 12, y + TILE_SIZE * 2.3 + bob);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Hull stripe
+            ctx.fillStyle = '#1976d2';
+            ctx.beginPath();
+            ctx.moveTo(x + 6, y + 16 + bob);
+            ctx.lineTo(x + TILE_SIZE * 2 - 6, y + 16 + bob);
+            ctx.lineTo(x + TILE_SIZE * 2 - 8, y + 22 + bob);
+            ctx.lineTo(x + 8, y + 22 + bob);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Hull outline
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x + 5, y + 10 + bob);
+            ctx.lineTo(x + TILE_SIZE * 2 - 5, y + 10 + bob);
+            ctx.lineTo(x + TILE_SIZE * 2 - 12, y + TILE_SIZE * 2.3 + bob);
+            ctx.lineTo(x + 12, y + TILE_SIZE * 2.3 + bob);
+            ctx.closePath();
+            ctx.stroke();
+            
+            // Mast
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(x + TILE_SIZE - 2, y + 5 + bob, 4, 50);
+            
+            // Sail
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(x + TILE_SIZE + 2, y + 8 + bob);
+            ctx.lineTo(x + TILE_SIZE + 25, y + 30 + bob);
+            ctx.lineTo(x + TILE_SIZE + 2, y + 50 + bob);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Boat number
+            ctx.fillStyle = '#1976d2';
+            ctx.font = 'bold 10px "Press Start 2P"';
+            ctx.fillText(id.toString(), x + TILE_SIZE - 4, y + TILE_SIZE * 1.8 + bob);
+        }
+        
+        function drawItemSpawns() {
+            const p = gameState.player;
+            
+            itemSpawns.forEach(spawn => {
+                const item = ITEMS.find(i => i.id === spawn.itemId);
+                const spawnX = spawn.x * TILE_SIZE;
+                const spawnY = spawn.y * TILE_SIZE;
+                
+                // Check if player is near this item
+                const dist = Math.hypot(p.x - spawnX, p.y - spawnY);
+                const isNear = dist < TILE_SIZE * 1.2;
+                
+                // Highlight if player is near
+                if (isNear) {
+                    ctx.fillStyle = COLORS.itemHighlight;
+                    ctx.beginPath();
+                    ctx.arc(spawnX + 16, spawnY + 16, 20, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Draw item emoji
+                ctx.font = '24px Arial';
+                ctx.fillText(item.emoji, spawnX + 4, spawnY + 24);
+                
+                // Show item name if near
+                if (isNear) {
+                    ctx.fillStyle = '#333';
+                    ctx.font = '8px "Press Start 2P"';
+                    ctx.fillText(item.name.toUpperCase(), spawnX - 10, spawnY + 40);
+                }
+            });
+        }
+        
+        function drawPlayer() {
+            const p = gameState.player;
+            
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(p.x + 16, p.y + 30, 12, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Body
+            ctx.fillStyle = '#1565c0';
+            ctx.fillRect(p.x + 8, p.y + 12, 16, 16);
+            
+            // Head
+            ctx.fillStyle = '#ffcc80';
+            ctx.fillRect(p.x + 10, p.y + 2, 12, 12);
+            
+            // Cap
+            ctx.fillStyle = '#0d47a1';
+            ctx.fillRect(p.x + 8, p.y, 16, 6);
+            ctx.fillRect(p.x + 6, p.y + 4, 20, 3);
+            
+            // Eyes based on direction
+            ctx.fillStyle = '#333';
+            if (p.direction === 'up') {
+                // No eyes visible from back
+            } else if (p.direction === 'down') {
+                ctx.fillRect(p.x + 12, p.y + 6, 3, 3);
+                ctx.fillRect(p.x + 17, p.y + 6, 3, 3);
+            } else if (p.direction === 'left') {
+                ctx.fillRect(p.x + 10, p.y + 6, 3, 3);
+            } else {
+                ctx.fillRect(p.x + 19, p.y + 6, 3, 3);
+            }
+            
+            // Legs
+            ctx.fillStyle = '#333';
+            ctx.fillRect(p.x + 10, p.y + 28, 5, 6);
+            ctx.fillRect(p.x + 17, p.y + 28, 5, 6);
+            
+            // Held items - show stacked above player
+            if (p.holding.length > 0) {
+                p.holding.forEach((item, i) => {
+                    ctx.font = '20px Arial';
+                    ctx.fillText(item.emoji, p.x + 24 + (i * 8), p.y - 5 + (i * -12));
+                });
+            }
+        }
+        
+        function drawGuests() {
+            gameState.guests.forEach(guest => {
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(guest.x + 16, guest.y + 30, 10, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Body (tourist colors)
+                const colors = ['#e53935', '#8e24aa', '#43a047', '#fb8c00', '#00acc1'];
+                ctx.fillStyle = colors[guest.boatId % colors.length];
+                ctx.fillRect(guest.x + 8, guest.y + 10, 16, 18);
+                
+                // Head
+                ctx.fillStyle = '#ffcc80';
+                ctx.fillRect(guest.x + 10, guest.y, 12, 12);
+                
+                // Sunglasses
+                ctx.fillStyle = '#333';
+                ctx.fillRect(guest.x + 9, guest.y + 4, 14, 4);
+                
+                // Speech bubble with request
+                if (guest.needsItem && (gameState.floatistBonusActive || !guest.hidden)) {
+                    const bubbleX = guest.x - 10;
+                    const bubbleY = guest.y - 40;
+                    
+                    // Bubble background
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.roundRect(bubbleX, bubbleY, 52, 36, 8);
+                    ctx.fill();
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Bubble pointer
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.moveTo(guest.x + 10, bubbleY + 36);
+                    ctx.lineTo(guest.x + 16, bubbleY + 44);
+                    ctx.lineTo(guest.x + 22, bubbleY + 36);
+                    ctx.fill();
+                    
+                    // Item emoji
+                    ctx.font = '20px Arial';
+                    ctx.fillText(guest.needsItem.emoji, bubbleX + 14, bubbleY + 26);
+                    
+                    // Patience indicator
+                    const patienceRatio = guest.patience / GUEST_PATIENCE;
+                    ctx.fillStyle = patienceRatio > 0.5 ? '#4caf50' : patienceRatio > 0.25 ? '#ff9800' : '#f44336';
+                    ctx.fillRect(bubbleX + 4, bubbleY + 30, 44 * patienceRatio, 3);
+                }
+                
+                // Hidden indicator (question mark) when not in bonus mode
+                if (guest.needsItem && guest.hidden && !gameState.floatistBonusActive) {
+                    ctx.font = '16px "Press Start 2P"';
+                    ctx.fillStyle = '#666';
+                    ctx.fillText('?', guest.x + 12, guest.y - 10);
+                }
+            });
+        }
+        
+        function drawUI() {
+            // Update UI elements
+            document.getElementById('playerNameDisplay').textContent = gameState.playerName;
+            document.getElementById('checkedIn').textContent = gameState.checkedIn;
+            document.getElementById('coinCount').textContent = gameState.coins;
+            document.getElementById('boatCount').textContent = activeBoatCount;
+            
+            // Handle bonus indicator based on Floatist purchase
+            if (gameState.floatistPurchased) {
+                document.getElementById('bonusIndicator').style.display = 'none';
+                document.getElementById('floatistPermanent').style.display = 'block';
+            } else {
+                document.getElementById('bonusCount').textContent = gameState.floatistBonusCount;
+            }
+            
+            // Display 5-star rating
+            const filledStars = '★'.repeat(gameState.stars);
+            const emptyStars = '☆'.repeat(5 - gameState.stars);
+            const ratingEl = document.getElementById('rating');
+            ratingEl.innerHTML = `<span class="stars">${filledStars}</span><span class="bad-star">${emptyStars}</span>`;
+            
+            // Show shop hint when near shop
+            const p = gameState.player;
+            const shop = mapLayout.shop;
+            const nearShop = p.x > (shop.x - 1) * TILE_SIZE && p.x < (shop.x + shop.w + 1) * TILE_SIZE &&
+                            p.y > (shop.y - 1) * TILE_SIZE && p.y < (shop.y + shop.h + 1) * TILE_SIZE;
+            document.getElementById('shopHint').style.display = nearShop ? 'block' : 'none';
+        }
+        
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawMap();
+            drawGuests();
+            drawPlayer();
+            drawUI();
+        }
+        
+        // ========== GAME LOGIC ==========
+        let keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (gameState.screen === 'game') {
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    if (!gameState.shopOpen) {
+                        handleInteraction();
+                    }
+                }
+                if (e.key === 'f' || e.key === 'F') {
+                    e.preventDefault();
+                    if (!gameState.shopOpen && !gameState.floatistPurchased) {
+                        activateFloatistBonus();
+                    }
+                }
+                if (e.key === 'e' || e.key === 'E') {
+                    e.preventDefault();
+                    if (gameState.shopOpen) {
+                        closeShop();
+                    } else {
+                        // Check if near shop
+                        const p = gameState.player;
+                        const shop = mapLayout.shop;
+                        const nearShop = p.x > (shop.x - 1) * TILE_SIZE && p.x < (shop.x + shop.w + 1) * TILE_SIZE &&
+                                        p.y > (shop.y - 1) * TILE_SIZE && p.y < (shop.y + shop.h + 1) * TILE_SIZE;
+                        if (nearShop) {
+                            openShop();
+                        }
+                    }
+                }
+                if (e.key === 'Escape') {
+                    if (gameState.shopOpen) {
+                        closeShop();
+                    }
+                }
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        function handleInteraction() {
+            const p = gameState.player;
+            
+            // Check if near phone and it's ringing
+            if (gameState.phoneRinging) {
+                const office = mapLayout.office;
+                const officeCenter = {
+                    x: (office.x + office.w / 2) * TILE_SIZE,
+                    y: (office.y + office.h / 2) * TILE_SIZE
+                };
+                const distToOffice = Math.hypot(p.x - officeCenter.x, p.y - officeCenter.y);
+                if (distToOffice < TILE_SIZE * 3) {
+                    answerPhone();
+                    return;
+                }
+            }
+            
+            // Check if near an item spawn to pick up
+            if (gameState.floatistBonusActive) {
+                // During bonus: check if near ANY pickup zone, then grab ALL requested items
+                const nearStorage = p.x > 17 * TILE_SIZE && p.x < 23 * TILE_SIZE && p.y > 5 * TILE_SIZE && p.y < 9 * TILE_SIZE;
+                const nearWaterToys = p.x > 2 * TILE_SIZE && p.x < 7 * TILE_SIZE && p.y > 12 * TILE_SIZE && p.y < 16 * TILE_SIZE;
+                
+                if (nearStorage || nearWaterToys) {
+                    // Get all items guests currently need
+                    const neededItems = gameState.guests
+                        .filter(g => g.needsItem)
+                        .map(g => g.needsItem)
+                        .filter(item => !p.holding.find(h => h.id === item.id)); // Don't duplicate
+                    
+                    // Pick up all needed items that are in this zone
+                    neededItems.forEach(item => {
+                        const spawn = itemSpawns.find(s => s.itemId === item.id);
+                        if (spawn) {
+                            const isInStorage = spawn.x >= 18 && spawn.x <= 21;
+                            const isInWaterToys = spawn.x >= 3 && spawn.x <= 5;
+                            if ((nearStorage && isInStorage) || (nearWaterToys && isInWaterToys)) {
+                                p.holding.push(item);
+                            }
+                        }
+                    });
+                    if (p.holding.length > 0) return;
+                }
+            } else {
+                // Normal mode: pick up one item at a time
+                if (p.holding.length < 1) {
+                    for (let spawn of itemSpawns) {
+                        const spawnX = spawn.x * TILE_SIZE;
+                        const spawnY = spawn.y * TILE_SIZE;
+                        const dist = Math.hypot(p.x - spawnX, p.y - spawnY);
+                        
+                        if (dist < TILE_SIZE * 1.2) {
+                            const item = ITEMS.find(i => i.id === spawn.itemId);
+                            p.holding.push(item);
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            // Check if near guests/pier to deliver items
+            if (p.holding.length > 0) {
+                if (gameState.floatistBonusActive) {
+                    // During bonus: deliver to ALL guests on pier at once
+                    const nearPier = p.x > 11 * TILE_SIZE && p.x < 23 * TILE_SIZE && p.y > 7 * TILE_SIZE && p.y < 16 * TILE_SIZE;
+                    
+                    if (nearPier) {
+                        let deliveredCount = 0;
+                        let fastDeliveryCount = 0;
+                        
+                        // Try to deliver to all guests
+                        for (let guest of gameState.guests) {
+                            if (guest.needsItem) {
+                                const matchIndex = p.holding.findIndex(h => h.id === guest.needsItem.id);
+                                if (matchIndex !== -1) {
+                                    // Check if this was a fast delivery (under half patience time)
+                                    const halfPatience = GUEST_PATIENCE_BONUS / 2;
+                                    if (guest.patience > halfPatience) {
+                                        fastDeliveryCount++;
+                                    }
+                                    
+                                    // Deliver!
+                                    p.holding.splice(matchIndex, 1);
+                                    guest.needsItem = null;
+                                    guest.satisfied = true;
+                                    gameState.checkedIn++;
+                                    gameState.totalDeliveries++;
+                                    deliveredCount++;
+                                    
+                                    // Award coins (1-2 per delivery)
+                                    const coinsEarned = Math.floor(Math.random() * 2) + 1;
+                                    gameState.coins += coinsEarned;
+                                    
+                                    // Remove guest after short delay
+                                    const guestToRemove = guest;
+                                    setTimeout(() => {
+                                        gameState.guests = gameState.guests.filter(g => g !== guestToRemove);
+                                    }, 500);
+                                }
+                            }
+                        }
+                        
+                        if (deliveredCount > 0) {
+                            // Show total coins earned
+                            showCoinNotification(deliveredCount);
+                            
+                            // Check for star regain: 3+ guests served fast during bonus
+                            if (fastDeliveryCount >= 3 && gameState.stars < 5) {
+                                regainStar();
+                            }
+                            
+                            // Check for bonus earned (capped at MAX_BONUSES)
+                            const newBonusCount = Math.floor(gameState.totalDeliveries / FLOATIST_BONUS_THRESHOLD);
+                            if (newBonusCount > gameState.floatistBonusCount + 1) {
+                                gameState.floatistBonusCount = Math.min(newBonusCount - 1, MAX_BONUSES);
+                            }
+                            
+                            // Check for new boat
+                            checkForNewBoat();
+                            
+                            // Speed up spawn and phone rates
+                            gameState.currentSpawnInterval = Math.max(
+                                MIN_SPAWN_INTERVAL,
+                                INITIAL_SPAWN_INTERVAL - (gameState.checkedIn * SPAWN_ACCELERATION)
+                            );
+                            gameState.currentPhoneInterval = Math.max(
+                                MIN_PHONE_INTERVAL,
+                                INITIAL_PHONE_INTERVAL - (gameState.checkedIn * PHONE_ACCELERATION)
+                            );
+                            return;
+                        }
+                    }
+                } else {
+                    // Normal mode: deliver to one guest at a time
+                    for (let guest of gameState.guests) {
+                        const dist = Math.hypot(p.x - guest.x, p.y - guest.y);
+                        if (dist < TILE_SIZE * 2 && guest.needsItem) {
+                            const matchIndex = p.holding.findIndex(h => h.id === guest.needsItem.id);
+                            if (matchIndex !== -1) {
+                                // Correct delivery!
+                                p.holding.splice(matchIndex, 1);
+                                guest.needsItem = null;
+                                guest.satisfied = true;
+                                gameState.checkedIn++;
+                                gameState.totalDeliveries++;
+                                
+                                // Award coins (1-2 per delivery)
+                                const coinsEarned = Math.floor(Math.random() * 2) + 1;
+                                gameState.coins += coinsEarned;
+                                showCoinNotification(coinsEarned);
+                                
+                                // Check for trial offer at 75 check-ins
+                                if (gameState.checkedIn === TRIAL_OFFER_THRESHOLD && !gameState.trialOfferShown && !gameState.floatistPurchased) {
+                                    setTimeout(showTrialOffer, 1000);
+                                }
+                                
+                                // Check for bonus earned (capped at MAX_BONUSES)
+                                const newBonusCount = Math.floor(gameState.totalDeliveries / FLOATIST_BONUS_THRESHOLD);
+                                if (newBonusCount > gameState.floatistBonusCount + (gameState.floatistBonusActive ? 1 : 0)) {
+                                    gameState.floatistBonusCount = Math.min(
+                                        newBonusCount - (gameState.floatistBonusActive ? 1 : 0),
+                                        MAX_BONUSES
+                                    );
+                                    
+                                    // Show notification on first bonus earned
+                                    if (!gameState.bonusNotificationShown && gameState.totalDeliveries >= FLOATIST_BONUS_THRESHOLD) {
+                                        showBonusNotification();
+                                    }
+                                }
+                                
+                                // Check for new boat
+                                checkForNewBoat();
+                                
+                                // Speed up spawn and phone rates
+                                gameState.currentSpawnInterval = Math.max(
+                                    MIN_SPAWN_INTERVAL,
+                                    INITIAL_SPAWN_INTERVAL - (gameState.checkedIn * SPAWN_ACCELERATION)
+                                );
+                                gameState.currentPhoneInterval = Math.max(
+                                    MIN_PHONE_INTERVAL,
+                                    INITIAL_PHONE_INTERVAL - (gameState.checkedIn * PHONE_ACCELERATION)
+                                );
+                                
+                                // Remove guest after short delay
+                                setTimeout(() => {
+                                    gameState.guests = gameState.guests.filter(g => g !== guest);
+                                }, 500);
+                                return;
+                            } else if (p.holding.length > 0 && guest.needsItem) {
+                                // Wrong item delivered = lose a star
+                                loseStar('You delivered the wrong item!');
+                                p.holding = [];
+                                return;
+                            }
+                        }
+                    }
+                }
+                // Drop all items if not delivering to guest
+                p.holding = [];
+            }
+        }
+        
+        // ========== SHOP FUNCTIONS ==========
+        function showCoinNotification(amount) {
+            const notification = document.getElementById('coinNotification');
+            document.getElementById('coinsEarned').textContent = amount;
+            notification.style.display = 'block';
+            notification.style.animation = 'none';
+            notification.offsetHeight; // Trigger reflow
+            notification.style.animation = 'coinPop 0.5s ease-out';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 1000);
+        }
+        
+        function openShop() {
+            gameState.shopOpen = true;
+            gameState.gamePaused = true;
+            document.getElementById('shopPopup').style.display = 'flex';
+            updateShopUI();
+        }
+        
+        function closeShop() {
+            gameState.shopOpen = false;
+            gameState.gamePaused = false;
+            document.getElementById('shopPopup').style.display = 'none';
+        }
+        
+        function updateShopUI() {
+            document.getElementById('shopCoinCount').textContent = gameState.coins;
+            
+            // Assistant status
+            const assistantStatus = document.getElementById('assistantStatus');
+            const buyAssistantBtn = document.getElementById('buyAssistantBtn');
+            if (gameState.assistantActive) {
+                assistantStatus.textContent = 'Currently active!';
+                assistantStatus.style.color = '#4caf50';
+                buyAssistantBtn.disabled = true;
+            } else {
+                assistantStatus.textContent = 'Ready to hire';
+                assistantStatus.style.color = '#888';
+                buyAssistantBtn.disabled = gameState.coins < ASSISTANT_COST;
+            }
+            
+            const buyFloatistBtn = document.getElementById('buyFloatistBtn');
+            if (gameState.floatistPurchased) {
+                buyFloatistBtn.disabled = true;
+                buyFloatistBtn.textContent = 'OWNED';
+                document.getElementById('floatistStatus').textContent = '✓ Installed!';
+                document.getElementById('floatistStatus').style.color = '#00e676';
+            } else {
+                buyFloatistBtn.disabled = gameState.coins < FLOATIST_PURCHASE_COST;
+            }
+        }
+        
+        function buyAssistant() {
+            if (gameState.coins >= ASSISTANT_COST && !gameState.assistantActive) {
+                gameState.coins -= ASSISTANT_COST;
+                gameState.assistantActive = true;
+                gameState.assistantTimer = ASSISTANT_DURATION;
+                
+                document.getElementById('assistantActive').style.display = 'block';
+                updateAssistantTimerDisplay();
+                
+                updateShopUI();
+                closeShop();
+            }
+        }
+        
+        function updateAssistantTimerDisplay() {
+            const seconds = Math.ceil(gameState.assistantTimer / 1000);
+            document.getElementById('assistantTimer').textContent = seconds;
+        }
+        
+        function buyFloatist() {
+            if (gameState.coins >= FLOATIST_PURCHASE_COST && !gameState.floatistPurchased) {
+                gameState.coins -= FLOATIST_PURCHASE_COST;
+                gameState.floatistPurchased = true;
+                
+                // Activate permanent bonus mode
+                gameState.floatistBonusActive = true;
+                document.getElementById('floatistPermanent').style.display = 'block';
+                document.getElementById('bonusIndicator').style.display = 'none';
+                
+                updateShopUI();
+                closeShop();
+            }
+        }
+        
+        function showTrialOffer() {
+            if (gameState.trialOfferShown || gameState.floatistPurchased) return;
+            
+            gameState.trialOfferShown = true;
+            gameState.gamePaused = true;
+            
+            const buyTrialBtn = document.getElementById('buyTrialBtn');
+            buyTrialBtn.disabled = gameState.coins < FLOATIST_TRIAL_COST;
+            
+            document.getElementById('trialOfferPopup').style.display = 'flex';
+        }
+        
+        function buyFloatistTrial() {
+            if (gameState.coins >= FLOATIST_TRIAL_COST && !gameState.floatistTrialActive) {
+                gameState.coins -= FLOATIST_TRIAL_COST;
+                gameState.floatistTrialActive = true;
+                gameState.floatistTrialTimer = FLOATIST_TRIAL_DURATION;
+                gameState.floatistBonusActive = true;
+                
+                document.getElementById('floatistPermanent').textContent = '⚓ FLOATIST TRIAL (' + Math.ceil(FLOATIST_TRIAL_DURATION / 1000) + 's)';
+                document.getElementById('floatistPermanent').style.display = 'block';
+                
+                dismissTrialOffer();
+            }
+        }
+        
+        function dismissTrialOffer() {
+            gameState.gamePaused = false;
+            document.getElementById('trialOfferPopup').style.display = 'none';
+        }
+        
+        function updateAssistant(dt) {
+            // Update assistant timer
+            if (gameState.assistantActive) {
+                gameState.assistantTimer -= dt;
+                updateAssistantTimerDisplay();
+                
+                if (gameState.assistantTimer <= 0) {
+                    gameState.assistantActive = false;
+                    document.getElementById('assistantActive').style.display = 'none';
+                }
+            }
+            
+            // Update Floatist trial timer
+            if (gameState.floatistTrialActive && !gameState.floatistPurchased) {
+                gameState.floatistTrialTimer -= dt;
+                const seconds = Math.ceil(gameState.floatistTrialTimer / 1000);
+                document.getElementById('floatistPermanent').textContent = '⚓ FLOATIST TRIAL (' + seconds + 's)';
+                
+                if (gameState.floatistTrialTimer <= 0) {
+                    gameState.floatistTrialActive = false;
+                    gameState.floatistBonusActive = false;
+                    document.getElementById('floatistPermanent').style.display = 'none';
+                }
+            }
+        }
+        
+        function showBonusNotification() {
+            gameState.bonusNotificationShown = true;
+            gameState.gamePaused = true; // Pause the game
+            document.getElementById('pauseOverlay').style.display = 'block';
+            document.getElementById('bonusNotification').style.display = 'block';
+        }
+        
+        function dismissBonusNotification() {
+            gameState.gamePaused = false;
+            document.getElementById('pauseOverlay').style.display = 'none';
+            document.getElementById('bonusNotification').style.display = 'none';
+        }
+        
+        function activateFloatistBonus() {
+            if (gameState.floatistBonusCount > 0 && !gameState.floatistBonusActive) {
+                gameState.floatistBonusCount--;
+                gameState.floatistBonusActive = true;
+                document.getElementById('floatistBonusActive').style.display = 'block';
+                
+                // Reveal all hidden guest requests AND extend their patience
+                gameState.guests.forEach(g => {
+                    g.hidden = false;
+                    if (g.needsItem) {
+                        g.patience = GUEST_PATIENCE_BONUS; // Reset to extended patience
+                    }
+                });
+                
+                gameState.floatistBonusTimer = setTimeout(() => {
+                    gameState.floatistBonusActive = false;
+                    document.getElementById('floatistBonusActive').style.display = 'none';
+                }, FLOATIST_BONUS_DURATION);
+            }
+        }
+        
+        function answerPhone() {
+            gameState.phoneRinging = false;
+            clearTimeout(gameState.phoneTimeout);
+            document.getElementById('phoneWarning').style.display = 'none';
+        }
+        
+        function getActiveBoats() {
+            return mapLayout.allBoatPositions.slice(0, activeBoatCount);
+        }
+        
+        function spawnGuest() {
+            const gate = mapLayout.gate;
+            const boats = getActiveBoats();
+            const availableBoats = boats.filter(b => 
+                !gameState.guests.find(g => g.boatId === b.id)
+            );
+            
+            if (availableBoats.length === 0) return;
+            
+            const boat = availableBoats[Math.floor(Math.random() * availableBoats.length)];
+            const needsItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+            
+            const guest = {
+                x: gate.x * TILE_SIZE,
+                y: gate.y * TILE_SIZE,
+                targetX: boat.x * TILE_SIZE + TILE_SIZE,
+                targetY: boat.y * TILE_SIZE - TILE_SIZE,
+                boatId: boat.id,
+                needsItem: needsItem,
+                patience: GUEST_PATIENCE,
+                hidden: !gameState.floatistBonusActive,
+                satisfied: false
+            };
+            
+            gameState.guests.push(guest);
+        }
+        
+        function updateGuests(dt) {
+            gameState.guests.forEach(guest => {
+                // Move towards boat
+                if (guest.x !== guest.targetX || guest.y !== guest.targetY) {
+                    const dx = guest.targetX - guest.x;
+                    const dy = guest.targetY - guest.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > 3) {
+                        guest.x += (dx / dist) * 2;
+                        guest.y += (dy / dist) * 2;
+                    } else {
+                        guest.x = guest.targetX;
+                        guest.y = guest.targetY;
+                    }
+                }
+                
+                // Check if player is near to reveal request
+                if (guest.hidden && !gameState.floatistBonusActive) {
+                    const dist = Math.hypot(gameState.player.x - guest.x, gameState.player.y - guest.y);
+                    if (dist < TILE_SIZE * 3) {
+                        guest.hidden = false;
+                    }
+                }
+                
+                // Update patience
+                if (guest.needsItem && !guest.hidden) {
+                    guest.patience -= dt;
+                    if (guest.patience <= 0) {
+                        // Guest left unhappy = lose a star
+                        guest.needsItem = null;
+                        
+                        // Remove angry guest
+                        setTimeout(() => {
+                            gameState.guests = gameState.guests.filter(g => g !== guest);
+                        }, 500);
+                        
+                        loseStar('A guest left without being served!');
+                    }
+                }
+            });
+        }
+        
+        function updatePlayer() {
+            const p = gameState.player;
+            let dx = 0, dy = 0;
+            
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) { dy = -1; p.direction = 'up'; }
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) { dy = 1; p.direction = 'down'; }
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) { dx = -1; p.direction = 'left'; }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) { dx = 1; p.direction = 'right'; }
+            
+            // No diagonal slowdown - keep movement fast and responsive
+            const newX = p.x + dx * PLAYER_SPEED;
+            const newY = p.y + dy * PLAYER_SPEED;
+            
+            // Bounds checking
+            if (newX > 0 && newX < canvas.width - 32) {
+                p.x = newX;
+            }
+            if (newY > 0 && newY < canvas.height - 32) {
+                p.y = newY;
+            }
+        }
+        
+        function updatePhone() {
+            if (gameState.phoneRinging) return;
+            
+            // Don't ring phone during Floatist bonus, if Floatist purchased, or if assistant is active
+            if (gameState.floatistBonusActive || gameState.floatistPurchased || gameState.assistantActive) return;
+            
+            const now = Date.now();
+            if (now - gameState.lastPhoneTime > gameState.currentPhoneInterval) {
+                gameState.phoneRinging = true;
+                gameState.lastPhoneTime = now;
+                document.getElementById('phoneWarning').style.display = 'block';
+                
+                gameState.phoneTimeout = setTimeout(() => {
+                    if (gameState.phoneRinging) {
+                        // Missed call = lose a star
+                        gameState.phoneRinging = false;
+                        document.getElementById('phoneWarning').style.display = 'none';
+                        loseStar('You missed a phone call!');
+                    }
+                }, PHONE_TIMEOUT);
+            }
+        }
+        
+        function loseStar(reason) {
+            gameState.stars--;
+            
+            // Show notification on first star loss
+            if (!gameState.starLostNotificationShown) {
+                gameState.starLostNotificationShown = true;
+                gameState.gamePaused = true;
+                document.getElementById('starLostReason').textContent = reason;
+                document.getElementById('pauseOverlay').style.display = 'block';
+                document.getElementById('starLostNotification').style.display = 'block';
+            }
+            
+            if (gameState.stars <= 0) {
+                gameOver();
+            }
+        }
+        
+        function dismissStarLostNotification() {
+            gameState.gamePaused = false;
+            document.getElementById('pauseOverlay').style.display = 'none';
+            document.getElementById('starLostNotification').style.display = 'none';
+        }
+        
+        function regainStar() {
+            if (gameState.stars < 5) {
+                gameState.stars++;
+                const notification = document.getElementById('starRegainedNotification');
+                notification.style.display = 'block';
+                // Reset animation
+                notification.style.animation = 'none';
+                notification.offsetHeight; // Trigger reflow
+                notification.style.animation = 'slideIn 0.3s ease-out, fadeOut 0.5s ease-in 1.5s forwards';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 2000);
+            }
+        }
+        
+        function checkForNewBoat() {
+            // Add a new boat every 10 deliveries
+            const boatsEarned = 5 + Math.floor(gameState.checkedIn / 10);
+            const maxBoats = mapLayout.allBoatPositions.length;
+            
+            if (boatsEarned > activeBoatCount && activeBoatCount < maxBoats) {
+                activeBoatCount = Math.min(boatsEarned, maxBoats);
+                
+                // Show notification
+                document.getElementById('newBoatNumber').textContent = activeBoatCount;
+                const notification = document.getElementById('newBoatNotification');
+                notification.style.display = 'block';
+                // Reset animation
+                notification.style.animation = 'none';
+                notification.offsetHeight; // Trigger reflow
+                notification.style.animation = 'slideIn 0.3s ease-out, fadeOut 0.5s ease-in 2s forwards';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 2500);
+            }
+        }
+        
+        async function gameOver() {
+            gameState.screen = 'gameover';
+            
+            // Show CTA popup first
+            document.getElementById('finalScoreCTA').textContent = gameState.checkedIn;
+            document.getElementById('finalScore').textContent = gameState.checkedIn;
+            document.getElementById('gameOverCTA').classList.remove('hidden');
+            
+            document.getElementById('uiOverlay').style.display = 'none';
+            document.getElementById('phoneWarning').style.display = 'none';
+            document.getElementById('floatistBonusActive').style.display = 'none';
+            document.getElementById('bonusNotification').style.display = 'none';
+            document.getElementById('starLostNotification').style.display = 'none';
+            document.getElementById('starRegainedNotification').style.display = 'none';
+            document.getElementById('newBoatNotification').style.display = 'none';
+            document.getElementById('pauseOverlay').style.display = 'none';
+            
+            // Save score and reload leaderboard
+            await saveScore(gameState.playerName, gameState.checkedIn);
+            renderLeaderboard('gameOverLeaderboard');
+            
+            // Clear timers
+            clearTimeout(gameState.phoneTimeout);
+            clearTimeout(gameState.floatistBonusTimer);
+        }
+        
+        function dismissCTA() {
+            document.getElementById('gameOverCTA').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+        
+        // ========== GAME LOOP ==========
+        let lastTime = 0;
+        let guestSpawnTimer = 0;
+        
+        function gameLoop(timestamp) {
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            if (gameState.screen === 'game' && !gameState.gamePaused) {
+                updatePlayer();
+                updateGuests(dt);
+                updatePhone();
+                updateAssistant(dt);
+                
+                // Spawn guests based on current interval (max guests = active boats)
+                guestSpawnTimer += dt;
+                if (guestSpawnTimer > gameState.currentSpawnInterval && gameState.guests.length < activeBoatCount) {
+                    spawnGuest();
+                    guestSpawnTimer = 0;
+                }
+            }
+            
+            // Always render (even when paused, to show the pause state)
+            if (gameState.screen === 'game') {
+                render();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // ========== MENU HANDLERS ==========
+        document.getElementById('playBtn').addEventListener('click', () => {
+            const nameInput = document.getElementById('playerNameInput');
+            const name = nameInput.value.trim() || 'Captain';
+            startGame(name);
+        });
+        
+        document.getElementById('playerNameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const name = e.target.value.trim() || 'Captain';
+                startGame(name);
+            }
+        });
+        
+        document.getElementById('leaderboardBtn').addEventListener('click', async () => {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('leaderboardScreen').classList.remove('hidden');
+            document.getElementById('leaderboardList').innerHTML = '<div style="text-align: center; color: #666; font-size: 10px;">Loading...</div>';
+            await loadLeaderboard();
+            renderLeaderboard('leaderboardList');
+        });
+        
+        document.getElementById('backBtn').addEventListener('click', () => {
+            document.getElementById('leaderboardScreen').classList.add('hidden');
+            document.getElementById('mainMenu').classList.remove('hidden');
+        });
+        
+        document.getElementById('ctaCloseBtn').addEventListener('click', () => {
+            dismissCTA();
+        });
+        
+        document.getElementById('retryBtn').addEventListener('click', () => {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            startGame(gameState.playerName);
+        });
+        
+        document.getElementById('menuBtn').addEventListener('click', () => {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('mainMenu').classList.remove('hidden');
+        });
+        
+        function startGame(name) {
+            // Reset boat count
+            activeBoatCount = 5;
+            
+            gameState = {
+                screen: 'game',
+                playerName: name,
+                player: { x: 6 * TILE_SIZE, y: 6 * TILE_SIZE, holding: [], direction: 'down' },
+                guests: [],
+                checkedIn: 0,
+                stars: 5,
+                coins: 0,
+                assistantActive: false,
+                assistantTimer: 0,
+                floatistPurchased: false,
+                floatistTrialActive: false,
+                floatistTrialTimer: 0,
+                trialOfferShown: false,
+                phoneRinging: false,
+                phoneTimer: null,
+                phoneTimeout: null,
+                floatistBonusActive: false,
+                floatistBonusCount: 0,
+                floatistBonusTimer: null,
+                totalDeliveries: 0,
+                bonusNotificationShown: false,
+                starLostNotificationShown: false,
+                shopOpen: false,
+                gamePaused: false,
+                lastPhoneTime: Date.now(),
+                gameStartTime: Date.now(),
+                currentSpawnInterval: INITIAL_SPAWN_INTERVAL,
+                currentPhoneInterval: INITIAL_PHONE_INTERVAL
+            };
+            
+            // Reset UI elements
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('uiOverlay').style.display = 'flex';
+            document.getElementById('floatistPermanent').style.display = 'none';
+            document.getElementById('bonusIndicator').style.display = 'block';
+            document.getElementById('shopPopup').style.display = 'none';
+            document.getElementById('trialOfferPopup').style.display = 'none';
+            document.getElementById('assistantActive').style.display = 'none';
+            guestSpawnTimer = 0; // Reset spawn timer
+            
+            // Spawn first guest after 2 seconds
+            setTimeout(spawnGuest, 2000);
+        }
+        
+        // Start the game loop
+        requestAnimationFrame(gameLoop);
+        
+        // Initial render for menu background
+        render();
+    </script>
+</body>
+</html>
