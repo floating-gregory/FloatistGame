@@ -937,7 +937,16 @@
         // ========== SUPABASE CONFIG ==========
         const SUPABASE_URL = 'https://hxprgujtxegryhytzxik.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4cHJndWp0eGVncnloeXR6eGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwOTI2MTYsImV4cCI6MjA4MjY2ODYxNn0.WdPmqtHwmqUFfX140mlLtA6sT4L7Sq6K3gPRXQXu3dg';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Initialize Supabase client (with fallback if CDN fails)
+        let supabaseClient = null;
+        try {
+            if (typeof supabase !== 'undefined' && supabase.createClient) {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (err) {
+            console.warn('Supabase init failed, using localStorage fallback:', err);
+        }
         
         // ========== LEADERBOARD ==========
         let leaderboard = [];
@@ -945,14 +954,18 @@
         // Load leaderboard from Supabase
         async function loadLeaderboard() {
             try {
-                const { data, error } = await supabase
-                    .from('leaderboard')
-                    .select('name, score, created_at')
-                    .order('score', { ascending: false })
-                    .limit(50);
-                
-                if (error) throw error;
-                leaderboard = data || [];
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('leaderboard')
+                        .select('name, score, created_at')
+                        .order('score', { ascending: false })
+                        .limit(50);
+                    
+                    if (error) throw error;
+                    leaderboard = data || [];
+                } else {
+                    throw new Error('Supabase not available');
+                }
             } catch (err) {
                 console.error('Failed to load leaderboard:', err);
                 // Fall back to localStorage if Supabase fails
@@ -963,14 +976,18 @@
         // Save score to Supabase
         async function saveScore(name, score) {
             try {
-                const { error } = await supabase
-                    .from('leaderboard')
-                    .insert([{ name, score }]);
-                
-                if (error) throw error;
-                
-                // Reload leaderboard after saving
-                await loadLeaderboard();
+                if (supabaseClient) {
+                    const { error } = await supabaseClient
+                        .from('leaderboard')
+                        .insert([{ name, score }]);
+                    
+                    if (error) throw error;
+                    
+                    // Reload leaderboard after saving
+                    await loadLeaderboard();
+                } else {
+                    throw new Error('Supabase not available');
+                }
             } catch (err) {
                 console.error('Failed to save score:', err);
                 // Fall back to localStorage
