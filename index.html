@@ -938,11 +938,12 @@
         const SUPABASE_URL = 'https://hxprgujtxegryhytzxik.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4cHJndWp0eGVncnloeXR6eGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwOTI2MTYsImV4cCI6MjA4MjY2ODYxNn0.WdPmqtHwmqUFfX140mlLtA6sT4L7Sq6K3gPRXQXu3dg';
         
-        // Initialize Supabase client (with fallback if CDN fails)
+        // Initialize Supabase client (access via window to avoid redeclaration)
         let supabaseClient = null;
         try {
-            if (typeof supabase !== 'undefined' && supabase.createClient) {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const supabaseLib = window['supabase'];
+            if (supabaseLib && supabaseLib.createClient) {
+                supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             }
         } catch (err) {
             console.warn('Supabase init failed, using localStorage fallback:', err);
