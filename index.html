@@ -1017,10 +1017,47 @@
             
             .screen {
                 padding: 15px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                overflow-y: auto;
             }
             
             .screen h1, .menu-title {
                 font-size: 18px !important;
+            }
+            
+            .floatist-logo {
+                width: 120px;
+                margin-bottom: 10px;
+            }
+            
+            .title {
+                font-size: 16px !important;
+            }
+            
+            .subtitle {
+                font-size: 8px !important;
+                margin-bottom: 10px !important;
+            }
+            
+            .name-label {
+                font-size: 8px;
+                margin-bottom: 5px;
+            }
+            
+            .name-input {
+                font-size: 10px;
+                padding: 8px;
+                margin-bottom: 10px;
+            }
+            
+            .instructions {
+                font-size: 7px;
+                line-height: 1.8;
+                display: none;
             }
             
             .menu-btn {
@@ -1078,6 +1115,176 @@
             /* Hide keyboard hints on mobile */
             .key {
                 display: none;
+            }
+            
+            /* Mobile popup adjustments */
+            .notification {
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 90%;
+                padding: 10px 15px;
+                font-size: 8px;
+                line-height: 1.5;
+            }
+            
+            .notification .dismiss-btn {
+                font-size: 8px;
+                padding: 8px 15px;
+            }
+            
+            .shop-popup {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+            }
+            
+            .shop-content {
+                max-width: 85%;
+                padding: 15px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            
+            .shop-title {
+                font-size: 12px;
+                margin-bottom: 10px;
+            }
+            
+            .shop-balance {
+                font-size: 10px;
+                margin-bottom: 12px;
+                padding: 8px;
+            }
+            
+            .shop-item {
+                padding: 8px;
+                gap: 8px;
+            }
+            
+            .shop-item-icon {
+                font-size: 16px;
+            }
+            
+            .shop-item-name {
+                font-size: 8px;
+            }
+            
+            .shop-item-desc {
+                font-size: 7px;
+            }
+            
+            .shop-item-price {
+                font-size: 8px;
+                padding: 4px 8px;
+            }
+            
+            .floatist-bonus-active {
+                top: 5px;
+                font-size: 8px;
+                padding: 8px 12px;
+                max-width: 70%;
+            }
+            
+            .pause-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+            }
+            
+            #gameOverScreen {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                padding: 20px;
+                box-sizing: border-box;
+                overflow-y: auto;
+            }
+            
+            #ctaScreen {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+            }
+            
+            .floatist-permanent-bar {
+                font-size: 7px;
+                padding: 4px 10px;
+            }
+            
+            .ui-overlay {
+                flex-wrap: wrap;
+                gap: 3px;
+                padding: 3px;
+            }
+            
+            .stat-box {
+                font-size: 6px;
+                padding: 3px 6px;
+            }
+            
+            .phone-warning {
+                top: auto;
+                bottom: 52vh;
+                font-size: 10px;
+                padding: 6px 12px;
+            }
+            
+            .tutorial-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+            }
+            
+            .tutorial-content {
+                max-width: 90%;
+                padding: 15px 20px;
+                max-height: 85vh;
+                overflow-y: auto;
+            }
+            
+            .tutorial-title {
+                font-size: 11px;
+                margin-bottom: 10px;
+            }
+            
+            .tutorial-text {
+                font-size: 8px;
+                line-height: 1.8;
+                margin-bottom: 12px;
+            }
+            
+            .tutorial-step {
+                min-height: auto;
+            }
+            
+            .tutorial-nav {
+                gap: 8px;
+            }
+            
+            .tutorial-nav button {
+                font-size: 8px;
+                padding: 8px 15px;
+            }
+            
+            .tutorial-progress {
+                font-size: 7px;
+            }
+            
+            .coin-notification {
+                top: 35px;
+                font-size: 9px;
+                padding: 5px 10px;
             }
         }
     </style>
@@ -2260,6 +2467,10 @@
         
         document.addEventListener('keydown', (e) => {
             keys[e.key] = true;
+            // Prevent default for arrow keys to stop browser navigation/scrolling
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
             if (gameState.screen === 'game') {
                 if (e.key === ' ') {
                     e.preventDefault();
