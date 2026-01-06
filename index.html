@@ -116,7 +116,7 @@
             font-size: 10px;
             text-align: center;
             border: 3px solid #fff;
-            z-index: 25;
+            z-index: 1050;
             display: none;
             max-width: 350px;
             line-height: 1.8;
@@ -176,7 +176,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            z-index: 24;
+            z-index: 1040;
             display: none;
         }
         
@@ -192,7 +192,7 @@
             align-items: center;
             justify-content: center;
             background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-            z-index: 100;
+            z-index: 1100;
         }
         
         .screen.hidden {
@@ -516,7 +516,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
-            z-index: 30;
+            z-index: 1060;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -709,13 +709,13 @@
         
         /* Tutorial Overlay */
         .tutorial-overlay {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 100;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1244,6 +1244,7 @@
                 left: 0;
                 width: 100vw;
                 height: 100vh;
+                z-index: 9999;
             }
             
             .tutorial-content {
@@ -1634,8 +1635,9 @@
         const TILE_SIZE = 32;
         const MAP_WIDTH = 25;
         const MAP_HEIGHT = 18;
-        const PLAYER_SPEED = 20; // Base movement speed
-        const UPGRADED_PLAYER_SPEED = 30; // Speed after upgrade (1.5x faster)
+        const PLAYER_SPEED = 15; // Base movement speed
+        const UPGRADED_PLAYER_SPEED = 20; // Speed after upgrade
+        const GUEST_SPEED = 15; // Guest movement speed
         const SPEED_UPGRADE_COST = 50; // coins to buy speed upgrade
         const GUEST_PATIENCE = 10000; // 10 seconds normally
         const GUEST_PATIENCE_BONUS = 17000; // 17 seconds during Floatist bonus
@@ -2594,10 +2596,24 @@
             }, { passive: false });
             
             // Show mobile controls
-            document.getElementById('mobileControls').style.display = 'flex';
+            // Controls will be shown when game starts, not immediately
         }
         
-        // Initialize mobile controls on load
+        // Show mobile controls (called when game starts)
+        function showMobileControls() {
+            if (isMobile) {
+                document.getElementById('mobileControls').style.display = 'flex';
+            }
+        }
+        
+        // Hide mobile controls (called when game ends or goes to menu)
+        function hideMobileControls() {
+            if (isMobile) {
+                document.getElementById('mobileControls').style.display = 'none';
+            }
+        }
+        
+        // Initialize mobile controls on load (but don't show them yet)
         if (isMobile) {
             setupMobileControls();
         }
@@ -2989,11 +3005,13 @@
         const totalTutorialSteps = 7;
         
         function showTutorial() {
+            console.log('showTutorial called');
             currentTutorialStep = 1;
             gameState.gamePaused = true;
             // Update tutorial text for mobile if needed
             updateTutorialForDevice();
             document.getElementById('tutorialOverlay').style.display = 'flex';
+            console.log('Tutorial overlay display set to flex');
             updateTutorialDisplay();
         }
         
@@ -3192,8 +3210,8 @@
                     const dy = guest.targetY - guest.y;
                     const dist = Math.hypot(dx, dy);
                     if (dist > 3) {
-                        guest.x += (dx / dist) * 2;
-                        guest.y += (dy / dist) * 2;
+                        guest.x += (dx / dist) * GUEST_SPEED;
+                        guest.y += (dy / dist) * GUEST_SPEED;
                     } else {
                         guest.x = guest.targetX;
                         guest.y = guest.targetY;
@@ -3337,6 +3355,9 @@
         async function gameOver() {
             gameState.screen = 'gameover';
             
+            // Hide mobile controls
+            hideMobileControls();
+            
             // Show CTA popup first
             document.getElementById('finalScoreCTA').textContent = gameState.checkedIn;
             document.getElementById('finalScore').textContent = gameState.checkedIn;
@@ -3370,10 +3391,22 @@
         // ========== GAME LOOP ==========
         let lastTime = 0;
         let guestSpawnTimer = 0;
+        let gameLoopStarted = false;
         
         function gameLoop(timestamp) {
-            const dt = timestamp - lastTime;
+            // Prevent massive dt on first frame
+            if (!gameLoopStarted || lastTime === 0) {
+                lastTime = timestamp;
+                gameLoopStarted = true;
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+            
+            let dt = timestamp - lastTime;
             lastTime = timestamp;
+            
+            // Cap dt to prevent lag-induced issues (max 100ms = 10fps minimum)
+            if (dt > 100) dt = 100;
             
             if (gameState.screen === 'game' && !gameState.gamePaused) {
                 updatePlayer();
@@ -3495,10 +3528,18 @@
             document.getElementById('tutorialOverlay').style.display = 'none';
             document.getElementById('floatistBonusActive').style.display = 'none';
             guestSpawnTimer = 0; // Reset spawn timer
+            lastTime = 0; // Reset timing to prevent lag issues
+            
+            // Show mobile controls on game start
+            showMobileControls();
             
             // Show tutorial for new players
+            console.log('Checking shouldShowTutorial:', shouldShowTutorial());
             if (shouldShowTutorial()) {
+                console.log('Will show tutorial');
                 showTutorial();
+            } else {
+                console.log('Tutorial already seen');
             }
             
             // Spawn first guest after tutorial or 2 seconds
