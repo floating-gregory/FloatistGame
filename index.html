@@ -197,6 +197,7 @@
         
         .screen.hidden {
             display: none;
+            pointer-events: none;
         }
         
         .floatist-logo {
@@ -887,8 +888,11 @@
             height: 50vh;
             background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
             border-top: 4px solid var(--floatist-blue);
-            z-index: 1000;
+            z-index: 2000;
             touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         .mobile-controls-inner {
@@ -925,13 +929,15 @@
             color: #fff;
             user-select: none;
             touch-action: none;
-            transition: all 0.1s;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            cursor: pointer;
+            transition: background 0.1s, border-color 0.1s;
         }
         
         .dpad-btn:active, .dpad-btn.pressed {
             background: linear-gradient(135deg, var(--floatist-blue), var(--floatist-blue-dark));
             border-color: var(--floatist-blue-light);
-            transform: scale(0.95);
         }
         
         .dpad-up { top: 0; left: 50%; transform: translateX(-50%); }
@@ -961,6 +967,9 @@
             color: #fff;
             user-select: none;
             touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            cursor: pointer;
             transition: all 0.1s;
             text-align: center;
             line-height: 1.4;
@@ -993,19 +1002,30 @@
             object-fit: contain;
         }
         
-        /* Mobile device detection - hide controls by default */
-        @media (max-width: 900px) and (pointer: coarse) {
+        /* Mobile device detection - show controls on touch/small devices */
+        @media (max-width: 900px) and (pointer: coarse),
+               (max-width: 900px) and (hover: none),
+               (max-width: 600px) {
+            
+            /* Mobile controls - only visible during gameplay */
             .mobile-controls {
-                display: flex;
+                display: none; /* JS will show/hide this */
             }
             
+            /* Game container - full screen for menus, top half for gameplay */
             .game-container {
                 position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
-                height: 50vh;
                 width: 100%;
+                height: 100vh; /* Full height by default for menus */
+                overflow: visible;
+            }
+            
+            /* When game is active, container shrinks to top half */
+            .game-container.game-active {
+                height: 50vh;
             }
             
             #gameCanvas {
@@ -1015,14 +1035,28 @@
                 max-height: none !important;
             }
             
+            /* Menu screens - CRITICAL: full viewport, scrollable, content at top */
             .screen {
-                padding: 15px;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                overflow-y: auto;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                box-sizing: border-box !important;
+                z-index: 1100 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                padding: 20px 15px 100px 15px !important;
+                background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%) !important;
+            }
+            
+            /* Ensure all screen content is visible */
+            .screen > * {
+                flex-shrink: 0;
             }
             
             .screen h1, .menu-title {
@@ -1661,8 +1695,18 @@
         const SPAWN_ACCELERATION = 120; // ms faster per guest checked in (faster acceleration)
         
         // ========== MOBILE DETECTION ==========
-        const isMobile = (window.innerWidth <= 900 && 'ontouchstart' in window) || 
-                         (navigator.maxTouchPoints > 0 && window.innerWidth <= 900);
+        // More robust mobile detection - check multiple indicators
+        const isMobile = (() => {
+            const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            const isSmallScreen = window.innerWidth <= 900;
+            const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Mobile if: small screen + touch OR mobile user agent OR touch-primary device
+            return (isSmallScreen && hasTouch) || isMobileUA || (isSmallScreen && isTouchDevice);
+        })();
+        
+        console.log('Mobile detection:', isMobile, 'Width:', window.innerWidth, 'Touch:', 'ontouchstart' in window);
         
         // Mobile touch state
         const touchState = {
@@ -2515,6 +2559,7 @@
         
         // ========== MOBILE TOUCH CONTROLS ==========
         function setupMobileControls() {
+            console.log('setupMobileControls called, isMobile:', isMobile);
             if (!isMobile) return;
             
             const btnUp = document.getElementById('btnUp');
@@ -2522,6 +2567,13 @@
             const btnLeft = document.getElementById('btnLeft');
             const btnRight = document.getElementById('btnRight');
             const btnAction = document.getElementById('btnAction');
+            
+            // Verify all buttons exist
+            if (!btnUp || !btnDown || !btnLeft || !btnRight || !btnAction) {
+                console.error('Mobile buttons not found!', { btnUp, btnDown, btnLeft, btnRight, btnAction });
+                return;
+            }
+            console.log('All mobile buttons found, setting up touch events');
             
             // Helper to prevent default and stop propagation
             const preventDefaults = (e) => {
@@ -2531,22 +2583,43 @@
             
             // D-pad buttons
             const setupDpadButton = (btn, direction) => {
+                // Touch handlers
                 btn.addEventListener('touchstart', (e) => {
                     preventDefaults(e);
                     touchState[direction] = true;
                     btn.classList.add('pressed');
+                    console.log('Touch START:', direction);
                 }, { passive: false });
                 
                 btn.addEventListener('touchend', (e) => {
                     preventDefaults(e);
                     touchState[direction] = false;
                     btn.classList.remove('pressed');
+                    console.log('Touch END:', direction);
                 }, { passive: false });
                 
                 btn.addEventListener('touchcancel', (e) => {
                     touchState[direction] = false;
                     btn.classList.remove('pressed');
                 }, { passive: false });
+                
+                // Mouse fallback for hybrid devices
+                btn.addEventListener('mousedown', (e) => {
+                    preventDefaults(e);
+                    touchState[direction] = true;
+                    btn.classList.add('pressed');
+                });
+                
+                btn.addEventListener('mouseup', (e) => {
+                    preventDefaults(e);
+                    touchState[direction] = false;
+                    btn.classList.remove('pressed');
+                });
+                
+                btn.addEventListener('mouseleave', (e) => {
+                    touchState[direction] = false;
+                    btn.classList.remove('pressed');
+                });
             };
             
             setupDpadButton(btnUp, 'up');
@@ -2595,27 +2668,83 @@
                 }
             }, { passive: false });
             
+            // Mouse fallback for action button
+            btnAction.addEventListener('mousedown', (e) => {
+                preventDefaults(e);
+                btnAction.classList.add('pressed');
+                
+                if (gameState.screen === 'game') {
+                    if (gameState.shopOpen) {
+                        closeShop();
+                    } else {
+                        handleInteraction();
+                        actionLongPressTimer = setTimeout(() => {
+                            if (!gameState.floatistPurchased && gameState.floatistBonusCount > 0 && !gameState.floatistBonusActive) {
+                                activateFloatistBonus();
+                            }
+                        }, 500);
+                    }
+                }
+            });
+            
+            btnAction.addEventListener('mouseup', (e) => {
+                preventDefaults(e);
+                btnAction.classList.remove('pressed');
+                if (actionLongPressTimer) {
+                    clearTimeout(actionLongPressTimer);
+                    actionLongPressTimer = null;
+                }
+            });
+            
+            btnAction.addEventListener('mouseleave', (e) => {
+                btnAction.classList.remove('pressed');
+                if (actionLongPressTimer) {
+                    clearTimeout(actionLongPressTimer);
+                    actionLongPressTimer = null;
+                }
+            });
+            
+            console.log('Mobile controls setup complete');
+            
             // Show mobile controls
             // Controls will be shown when game starts, not immediately
         }
         
         // Show mobile controls (called when game starts)
         function showMobileControls() {
+            const controls = document.getElementById('mobileControls');
+            const container = document.querySelector('.game-container');
             if (isMobile) {
-                document.getElementById('mobileControls').style.display = 'flex';
+                if (controls) {
+                    controls.style.display = 'flex';
+                }
+                if (container) {
+                    container.classList.add('game-active');
+                }
+                console.log('Mobile controls shown, game-active added');
             }
         }
         
         // Hide mobile controls (called when game ends or goes to menu)
         function hideMobileControls() {
+            const controls = document.getElementById('mobileControls');
+            const container = document.querySelector('.game-container');
             if (isMobile) {
-                document.getElementById('mobileControls').style.display = 'none';
+                if (controls) {
+                    controls.style.display = 'none';
+                }
+                if (container) {
+                    container.classList.remove('game-active');
+                }
+                console.log('Mobile controls hidden, game-active removed');
             }
         }
         
-        // Initialize mobile controls on load (but don't show them yet)
+        // Initialize mobile controls on load
         if (isMobile) {
             setupMobileControls();
+            // Ensure controls are ready but hidden until game starts
+            document.getElementById('mobileControls').style.display = 'none';
         }
         
         function handleInteraction() {
@@ -3209,12 +3338,13 @@
                     const dx = guest.targetX - guest.x;
                     const dy = guest.targetY - guest.y;
                     const dist = Math.hypot(dx, dy);
-                    if (dist > 3) {
-                        guest.x += (dx / dist) * GUEST_SPEED;
-                        guest.y += (dy / dist) * GUEST_SPEED;
-                    } else {
+                    // Snap to target if close enough, or if one step would overshoot
+                    if (dist <= GUEST_SPEED) {
                         guest.x = guest.targetX;
                         guest.y = guest.targetY;
+                    } else {
+                        guest.x += (dx / dist) * GUEST_SPEED;
+                        guest.y += (dy / dist) * GUEST_SPEED;
                     }
                 }
                 
