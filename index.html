@@ -1332,6 +1332,7 @@
             <div class="name-label">ENTER YOUR NAME</div>
             <input type="text" class="name-input" id="playerNameInput" placeholder="Captain" maxlength="15" autofocus>
             <button class="menu-btn" id="playBtn">▶ PLAY</button>
+            <button class="menu-btn" id="howToPlayBtn">❓ HOW TO PLAY</button>
             <button class="menu-btn" id="leaderboardBtn">🏆 LEADERBOARD</button>
             <div class="instructions">
                 <span class="key">↑</span> <span class="key">↓</span> <span class="key">←</span> <span class="key">→</span> to move<br>
@@ -1426,8 +1427,8 @@
         const TILE_SIZE = 32;
         const MAP_WIDTH = 25;
         const MAP_HEIGHT = 18;
-        const PLAYER_SPEED = 2; // Base movement speed (slow)
-        const UPGRADED_PLAYER_SPEED = 4; // Speed after upgrade (2x faster)
+        const PLAYER_SPEED = 4; // Base movement speed
+        const UPGRADED_PLAYER_SPEED = 6; // Speed after upgrade (1.5x faster)
         const SPEED_UPGRADE_COST = 50; // coins to buy speed upgrade
         const GUEST_PATIENCE = 10000; // 10 seconds normally
         const GUEST_PATIENCE_BONUS = 17000; // 17 seconds during Floatist bonus
@@ -3187,6 +3188,14 @@
         
         // ========== MENU HANDLERS ==========
         document.getElementById('playBtn').addEventListener('click', () => {
+            const nameInput = document.getElementById('playerNameInput');
+            const name = nameInput.value.trim() || 'Captain';
+            startGame(name);
+        });
+        
+        document.getElementById('howToPlayBtn').addEventListener('click', () => {
+            // Reset tutorial flag so it shows again
+            localStorage.removeItem('floatistTutorialSeen');
             const nameInput = document.getElementById('playerNameInput');
             const name = nameInput.value.trim() || 'Captain';
             startGame(name);
