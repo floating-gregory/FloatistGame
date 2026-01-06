@@ -276,6 +276,21 @@
             border-bottom-width: 2px;
         }
         
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            max-width: 400px;
+            margin: 15px auto;
+        }
+        
+        .button-grid .menu-btn {
+            margin: 0;
+            padding: 12px 15px;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+        
         .name-input {
             font-family: 'Press Start 2P', monospace;
             font-size: 14px;
@@ -861,6 +876,210 @@
             border-radius: 3px;
             border-bottom: 2px solid #555;
         }
+        
+        /* ========== MOBILE STYLES ========== */
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50vh;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-top: 4px solid var(--floatist-blue);
+            z-index: 1000;
+            touch-action: none;
+        }
+        
+        .mobile-controls-inner {
+            display: flex;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .dpad-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dpad {
+            position: relative;
+            width: 180px;
+            height: 180px;
+        }
+        
+        .dpad-btn {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #333, #222);
+            border: 3px solid #444;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            user-select: none;
+            touch-action: none;
+            transition: all 0.1s;
+        }
+        
+        .dpad-btn:active, .dpad-btn.pressed {
+            background: linear-gradient(135deg, var(--floatist-blue), var(--floatist-blue-dark));
+            border-color: var(--floatist-blue-light);
+            transform: scale(0.95);
+        }
+        
+        .dpad-up { top: 0; left: 50%; transform: translateX(-50%); }
+        .dpad-down { bottom: 0; left: 50%; transform: translateX(-50%); }
+        .dpad-left { left: 0; top: 50%; transform: translateY(-50%); }
+        .dpad-right { right: 0; top: 50%; transform: translateY(-50%); }
+        
+        .action-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--floatist-blue), var(--floatist-blue-dark));
+            border: 4px solid var(--floatist-blue-light);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: #fff;
+            user-select: none;
+            touch-action: none;
+            transition: all 0.1s;
+            text-align: center;
+            line-height: 1.4;
+            box-shadow: 0 6px 0 var(--floatist-blue-dark), 0 8px 20px rgba(0,0,0,0.4);
+        }
+        
+        .action-btn:active, .action-btn.pressed {
+            background: linear-gradient(135deg, var(--floatist-blue-light), var(--floatist-blue));
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 var(--floatist-blue-dark), 0 4px 10px rgba(0,0,0,0.4);
+        }
+        
+        .action-btn-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .mobile-game-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50vh;
+            overflow: hidden;
+        }
+        
+        .mobile-game-area canvas {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain;
+        }
+        
+        /* Mobile device detection - hide controls by default */
+        @media (max-width: 900px) and (pointer: coarse) {
+            .mobile-controls {
+                display: flex;
+            }
+            
+            .game-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 50vh;
+                width: 100%;
+            }
+            
+            #gameCanvas {
+                width: 100% !important;
+                height: 100% !important;
+                max-width: none !important;
+                max-height: none !important;
+            }
+            
+            .screen {
+                padding: 15px;
+            }
+            
+            .screen h1, .menu-title {
+                font-size: 18px !important;
+            }
+            
+            .menu-btn {
+                font-size: 10px;
+                padding: 10px 15px;
+                margin: 5px;
+            }
+            
+            .button-grid {
+                max-width: 100%;
+                gap: 8px;
+            }
+            
+            .button-grid .menu-btn {
+                font-size: 8px;
+                padding: 10px 8px;
+            }
+            
+            .tutorial-content {
+                font-size: 9px;
+                line-height: 1.8;
+                max-height: 35vh;
+                overflow-y: auto;
+            }
+            
+            .tutorial-step {
+                padding: 10px;
+            }
+            
+            .leaderboard {
+                font-size: 10px;
+            }
+            
+            .game-over-title {
+                font-size: 20px !important;
+            }
+            
+            .final-score {
+                font-size: 14px !important;
+            }
+            
+            .cta-popup {
+                padding: 15px;
+                max-width: 90%;
+            }
+            
+            .cta-popup h2 {
+                font-size: 14px;
+            }
+            
+            .cta-popup p {
+                font-size: 10px;
+            }
+            
+            /* Hide keyboard hints on mobile */
+            .key {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -969,6 +1188,7 @@
                         Earn 🪙 coins for each check-in!<br><br>
                         Walk to the <strong>purple SHOP</strong> building and press <span class="key">E</span> to buy:<br>
                         • 📞 Office Assistant (handles phone calls)<br>
+                        • 🏃 Speed Upgrade (move 2x faster!)<br>
                         • ⚓ Floatist (permanent bonus mode!)
                     </div>
                     <div class="tutorial-visual">🪙 → 🏪 → 🚀</div>
@@ -1014,6 +1234,18 @@
                         </button>
                     </div>
                     
+                    <div class="shop-item" id="speedUpgradeItem">
+                        <div class="shop-item-icon">🏃</div>
+                        <div class="shop-item-info">
+                            <div class="shop-item-name">Speed Upgrade</div>
+                            <div class="shop-item-desc">Move 2x faster permanently!</div>
+                            <div class="shop-item-owned" id="speedStatus">Not purchased</div>
+                        </div>
+                        <button class="shop-buy-btn" id="buySpeedBtn" onclick="buySpeedUpgrade()">
+                            🪙 50
+                        </button>
+                    </div>
+                    
                     <div class="shop-item shop-item-premium" id="buyFloatistItem">
                         <div class="shop-item-icon">⚓</div>
                         <div class="shop-item-info">
@@ -1022,7 +1254,7 @@
                             <div class="shop-item-owned" id="floatistStatus">Not purchased</div>
                         </div>
                         <button class="shop-buy-btn shop-buy-premium" id="buyFloatistBtn" onclick="buyFloatist()">
-                            🪙 200
+                            🪙 120
                         </button>
                     </div>
                 </div>
@@ -1156,14 +1388,36 @@
                 Guests checked in: <span id="finalScore">0</span>
             </div>
             <div class="leaderboard" id="gameOverLeaderboard"></div>
-            <button class="menu-btn" id="retryBtn">↻ TRY AGAIN</button>
-            <button class="menu-btn" id="menuBtn">← MENU</button>
-            <a href="https://meetings-eu1.hubspot.com/ante-kljenak" target="_blank" class="menu-btn cta-menu-btn">
-                📅 BOOK A DEMO
-            </a>
-            <a href="https://www.floatist.com" target="_blank" class="menu-btn">
-                🌐 FLOATIST.COM
-            </a>
+            <div class="button-grid">
+                <button class="menu-btn" id="retryBtn">↻ TRY AGAIN</button>
+                <button class="menu-btn" id="menuBtn">← MENU</button>
+                <a href="https://a.s.floatist.com/q/FlKYBwxsp" target="_blank" class="menu-btn cta-menu-btn">
+                    📅 BOOK A DEMO
+                </a>
+                <a href="https://a.s.floatist.com/q/q2EpM4xlW" target="_blank" class="menu-btn">
+                    🌐 FLOATIST.COM
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Touch Controls -->
+    <div class="mobile-controls" id="mobileControls">
+        <div class="mobile-controls-inner">
+            <div class="dpad-container">
+                <div class="dpad">
+                    <div class="dpad-btn dpad-up" id="btnUp">▲</div>
+                    <div class="dpad-btn dpad-down" id="btnDown">▼</div>
+                    <div class="dpad-btn dpad-left" id="btnLeft">◀</div>
+                    <div class="dpad-btn dpad-right" id="btnRight">▶</div>
+                </div>
+            </div>
+            <div class="action-container">
+                <div class="action-btn" id="btnAction">
+                    <span class="action-btn-icon">⚡</span>
+                    ACTION
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1172,7 +1426,9 @@
         const TILE_SIZE = 32;
         const MAP_WIDTH = 25;
         const MAP_HEIGHT = 18;
-        const PLAYER_SPEED = 6; // Faster, consistent movement
+        const PLAYER_SPEED = 2; // Base movement speed (slow)
+        const UPGRADED_PLAYER_SPEED = 4; // Speed after upgrade (2x faster)
+        const SPEED_UPGRADE_COST = 50; // coins to buy speed upgrade
         const GUEST_PATIENCE = 10000; // 10 seconds normally
         const GUEST_PATIENCE_BONUS = 17000; // 17 seconds during Floatist bonus
         const INITIAL_PHONE_INTERVAL = 20000; // 20 seconds at start
@@ -1182,7 +1438,7 @@
         const FLOATIST_BONUS_DURATION = 7000; // 7 seconds
         const FLOATIST_BONUS_THRESHOLD = 10; // guests needed per bonus
         const MAX_BONUSES = 10; // maximum bonuses player can hold
-        const FLOATIST_PURCHASE_COST = 200; // coins to buy permanent Floatist
+        const FLOATIST_PURCHASE_COST = 120; // coins to buy permanent Floatist
         const FLOATIST_TRIAL_COST = 75; // coins for 30 second trial
         const FLOATIST_TRIAL_DURATION = 30000; // 30 seconds trial
         const ASSISTANT_COST = 30; // coins for office assistant
@@ -1193,6 +1449,19 @@
         const INITIAL_SPAWN_INTERVAL = 5000; // 5 seconds at start
         const MIN_SPAWN_INTERVAL = 1800; // 1.8 seconds minimum (faster)
         const SPAWN_ACCELERATION = 120; // ms faster per guest checked in (faster acceleration)
+        
+        // ========== MOBILE DETECTION ==========
+        const isMobile = (window.innerWidth <= 900 && 'ontouchstart' in window) || 
+                         (navigator.maxTouchPoints > 0 && window.innerWidth <= 900);
+        
+        // Mobile touch state
+        const touchState = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            action: false
+        };
         
         // ========== GAME STATE ==========
         let gameState = {
@@ -1206,6 +1475,7 @@
             assistantActive: false, // Office assistant handling phones
             assistantTimer: 0, // Time remaining for assistant
             floatistPurchased: false, // Permanent Floatist mode
+            speedUpgraded: false, // Speed upgrade purchased
             floatistTrialActive: false, // Trial mode
             floatistTrialTimer: 0,
             trialOfferShown: false, // Whether we've shown the 75 check-in offer
@@ -1366,6 +1636,10 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         ctx.imageSmoothingEnabled = false;
+        
+        // Load Floatist logo for in-game display
+        const floatistLogoImg = new Image();
+        floatistLogoImg.src = document.getElementById('menuLogo').src;
         
         // Colors
         const COLORS = {
@@ -1557,6 +1831,15 @@
             // Open door
             ctx.fillStyle = '#3e2723';
             ctx.fillRect((storage.x + 2) * TILE_SIZE, (storage.y + storage.h - 1.5) * TILE_SIZE, TILE_SIZE * 2, TILE_SIZE * 1.5);
+            // Floatist logo on warehouse
+            if (floatistLogoImg.complete) {
+                const logoWidth = 80;
+                const logoHeight = logoWidth * (floatistLogoImg.height / floatistLogoImg.width) || 20;
+                ctx.drawImage(floatistLogoImg, 
+                    (storage.x + 0.8) * TILE_SIZE, 
+                    (storage.y + 0.5) * TILE_SIZE, 
+                    logoWidth, logoHeight);
+            }
             // Label
             ctx.fillStyle = '#fff';
             ctx.shadowColor = '#000';
@@ -2016,6 +2299,97 @@
             keys[e.key] = false;
         });
         
+        // ========== MOBILE TOUCH CONTROLS ==========
+        function setupMobileControls() {
+            if (!isMobile) return;
+            
+            const btnUp = document.getElementById('btnUp');
+            const btnDown = document.getElementById('btnDown');
+            const btnLeft = document.getElementById('btnLeft');
+            const btnRight = document.getElementById('btnRight');
+            const btnAction = document.getElementById('btnAction');
+            
+            // Helper to prevent default and stop propagation
+            const preventDefaults = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            };
+            
+            // D-pad buttons
+            const setupDpadButton = (btn, direction) => {
+                btn.addEventListener('touchstart', (e) => {
+                    preventDefaults(e);
+                    touchState[direction] = true;
+                    btn.classList.add('pressed');
+                }, { passive: false });
+                
+                btn.addEventListener('touchend', (e) => {
+                    preventDefaults(e);
+                    touchState[direction] = false;
+                    btn.classList.remove('pressed');
+                }, { passive: false });
+                
+                btn.addEventListener('touchcancel', (e) => {
+                    touchState[direction] = false;
+                    btn.classList.remove('pressed');
+                }, { passive: false });
+            };
+            
+            setupDpadButton(btnUp, 'up');
+            setupDpadButton(btnDown, 'down');
+            setupDpadButton(btnLeft, 'left');
+            setupDpadButton(btnRight, 'right');
+            
+            // Action button - handles space bar equivalent actions
+            let actionLongPressTimer = null;
+            
+            btnAction.addEventListener('touchstart', (e) => {
+                preventDefaults(e);
+                btnAction.classList.add('pressed');
+                
+                if (gameState.screen === 'game') {
+                    if (gameState.shopOpen) {
+                        // Close shop if open
+                        closeShop();
+                    } else {
+                        handleInteraction();
+                        
+                        // Long press to activate Floatist bonus
+                        actionLongPressTimer = setTimeout(() => {
+                            if (!gameState.floatistPurchased && gameState.floatistBonusCount > 0 && !gameState.floatistBonusActive) {
+                                activateFloatistBonus();
+                            }
+                        }, 500);
+                    }
+                }
+            }, { passive: false });
+            
+            btnAction.addEventListener('touchend', (e) => {
+                preventDefaults(e);
+                btnAction.classList.remove('pressed');
+                if (actionLongPressTimer) {
+                    clearTimeout(actionLongPressTimer);
+                    actionLongPressTimer = null;
+                }
+            }, { passive: false });
+            
+            btnAction.addEventListener('touchcancel', (e) => {
+                btnAction.classList.remove('pressed');
+                if (actionLongPressTimer) {
+                    clearTimeout(actionLongPressTimer);
+                    actionLongPressTimer = null;
+                }
+            }, { passive: false });
+            
+            // Show mobile controls
+            document.getElementById('mobileControls').style.display = 'flex';
+        }
+        
+        // Initialize mobile controls on load
+        if (isMobile) {
+            setupMobileControls();
+        }
+        
         function handleInteraction() {
             const p = gameState.player;
             
@@ -2029,6 +2403,17 @@
                 const distToOffice = Math.hypot(p.x - officeCenter.x, p.y - officeCenter.y);
                 if (distToOffice < TILE_SIZE * 3) {
                     answerPhone();
+                    return;
+                }
+            }
+            
+            // Check if near shop (for mobile - tap action button to open shop)
+            if (isMobile && !gameState.shopOpen) {
+                const shop = mapLayout.shop;
+                const nearShop = p.x > (shop.x - 1) * TILE_SIZE && p.x < (shop.x + shop.w + 1) * TILE_SIZE &&
+                                p.y > (shop.y - 1) * TILE_SIZE && p.y < (shop.y + shop.h + 1) * TILE_SIZE;
+                if (nearShop) {
+                    openShop();
                     return;
                 }
             }
@@ -2261,6 +2646,20 @@
                 buyAssistantBtn.disabled = gameState.coins < ASSISTANT_COST;
             }
             
+            // Speed upgrade status
+            const speedStatus = document.getElementById('speedStatus');
+            const buySpeedBtn = document.getElementById('buySpeedBtn');
+            if (gameState.speedUpgraded) {
+                speedStatus.textContent = '✓ Upgraded!';
+                speedStatus.style.color = '#00e676';
+                buySpeedBtn.disabled = true;
+                buySpeedBtn.textContent = 'OWNED';
+            } else {
+                speedStatus.textContent = 'Not purchased';
+                speedStatus.style.color = '#888';
+                buySpeedBtn.disabled = gameState.coins < SPEED_UPGRADE_COST;
+            }
+            
             const buyFloatistBtn = document.getElementById('buyFloatistBtn');
             if (gameState.floatistPurchased) {
                 buyFloatistBtn.disabled = true;
@@ -2280,6 +2679,16 @@
                 
                 document.getElementById('assistantActive').style.display = 'block';
                 updateAssistantTimerDisplay();
+                
+                updateShopUI();
+                closeShop();
+            }
+        }
+        
+        function buySpeedUpgrade() {
+            if (gameState.coins >= SPEED_UPGRADE_COST && !gameState.speedUpgraded) {
+                gameState.coins -= SPEED_UPGRADE_COST;
+                gameState.speedUpgraded = true;
                 
                 updateShopUI();
                 closeShop();
@@ -2370,8 +2779,51 @@
         function showTutorial() {
             currentTutorialStep = 1;
             gameState.gamePaused = true;
+            // Update tutorial text for mobile if needed
+            updateTutorialForDevice();
             document.getElementById('tutorialOverlay').style.display = 'flex';
             updateTutorialDisplay();
+        }
+        
+        function updateTutorialForDevice() {
+            if (!isMobile) return;
+            
+            // Step 2 - How to Move
+            const step2 = document.getElementById('tutorialStep2');
+            step2.querySelector('.tutorial-text').innerHTML = 
+                'Use the <strong>D-PAD</strong> on the left side of your screen to move around the marina.';
+            
+            // Step 3 - Pick Up & Deliver
+            const step3 = document.getElementById('tutorialStep3');
+            step3.querySelector('.tutorial-text').innerHTML = 
+                'Look at what guests need (shown above their head).<br><br>' +
+                'Go to <strong>STORAGE</strong> or <strong>TOYS</strong> area and tap <strong>ACTION</strong> button to pick up items.<br><br>' +
+                'Walk to the guest and tap <strong>ACTION</strong> to deliver!';
+            
+            // Step 4 - Answer Phone
+            const step4 = document.getElementById('tutorialStep4');
+            step4.querySelector('.tutorial-text').innerHTML = 
+                'When the phone rings, run to the <strong>OFFICE</strong> and tap <strong>ACTION</strong> to answer.<br><br>' +
+                'Miss a call or deliver the wrong item = lose a ⭐<br>' +
+                'Lose all 5 stars = Game Over!';
+            
+            // Step 5 - Floatist Bonus (on mobile, auto-activates or tap action near bonus indicator)
+            const step5 = document.getElementById('tutorialStep5');
+            step5.querySelector('.tutorial-text').innerHTML = 
+                'Every <strong>10 check-ins</strong> earns you a Floatist bonus!<br><br>' +
+                'The bonus activates automatically:<br>' +
+                '• See ALL guest requests at once<br>' +
+                '• Pick up ALL items in one grab<br>' +
+                '• Deliver to ALL guests at once!';
+            
+            // Step 6 - Shop
+            const step6 = document.getElementById('tutorialStep6');
+            step6.querySelector('.tutorial-text').innerHTML = 
+                'Earn 🪙 coins for each check-in!<br><br>' +
+                'Walk to the <strong>purple SHOP</strong> building and tap <strong>ACTION</strong> to buy:<br>' +
+                '• 📞 Office Assistant (handles phone calls)<br>' +
+                '• 🏃 Speed Upgrade (move 2x faster!)<br>' +
+                '• ⚓ Floatist (permanent bonus mode!)';
         }
         
         function updateTutorialDisplay() {
@@ -2566,14 +3018,15 @@
             const p = gameState.player;
             let dx = 0, dy = 0;
             
-            if (keys['ArrowUp'] || keys['w'] || keys['W']) { dy = -1; p.direction = 'up'; }
-            if (keys['ArrowDown'] || keys['s'] || keys['S']) { dy = 1; p.direction = 'down'; }
-            if (keys['ArrowLeft'] || keys['a'] || keys['A']) { dx = -1; p.direction = 'left'; }
-            if (keys['ArrowRight'] || keys['d'] || keys['D']) { dx = 1; p.direction = 'right'; }
+            if (keys['ArrowUp'] || keys['w'] || keys['W'] || touchState.up) { dy = -1; p.direction = 'up'; }
+            if (keys['ArrowDown'] || keys['s'] || keys['S'] || touchState.down) { dy = 1; p.direction = 'down'; }
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchState.left) { dx = -1; p.direction = 'left'; }
+            if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchState.right) { dx = 1; p.direction = 'right'; }
             
-            // No diagonal slowdown - keep movement fast and responsive
-            const newX = p.x + dx * PLAYER_SPEED;
-            const newY = p.y + dy * PLAYER_SPEED;
+            // Use upgraded speed if purchased
+            const currentSpeed = gameState.speedUpgraded ? UPGRADED_PLAYER_SPEED : PLAYER_SPEED;
+            const newX = p.x + dx * currentSpeed;
+            const newY = p.y + dy * currentSpeed;
             
             // Bounds checking
             if (newX > 0 && newX < canvas.width - 32) {
@@ -2788,6 +3241,7 @@
                 assistantActive: false,
                 assistantTimer: 0,
                 floatistPurchased: false,
+                speedUpgraded: false,
                 floatistTrialActive: false,
                 floatistTrialTimer: 0,
                 trialOfferShown: false,
