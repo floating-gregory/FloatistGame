@@ -85,20 +85,21 @@
         }
         
         .floatist-bonus-active {
-            position: absolute;
-            bottom: 15px;
+            position: fixed;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             background: linear-gradient(135deg, var(--floatist-blue), var(--floatist-blue-dark));
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 8px;
-            font-size: 10px;
+            font-size: 9px;
             text-align: center;
             border: 3px solid #fff;
             animation: bonusPulse 0.5s ease-in-out infinite alternate;
-            z-index: 20;
+            z-index: 5000;
             display: none;
             box-shadow: 0 0 20px rgba(0, 168, 255, 0.5);
+            max-width: 280px;
         }
         
         @keyframes bonusPulse {
@@ -1297,9 +1298,9 @@
             
             .floatist-bonus-active {
                 top: 5px;
-                font-size: 8px;
-                padding: 8px 12px;
-                max-width: 70%;
+                font-size: 7px;
+                padding: 6px 10px;
+                max-width: 85%;
             }
             
             .pause-overlay {
