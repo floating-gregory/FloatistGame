@@ -1451,92 +1451,6 @@
         
         <div class="pause-overlay" id="pauseOverlay"></div>
         
-        <!-- Tutorial Overlay -->
-        <div class="tutorial-overlay" id="tutorialOverlay" style="display: none;">
-            <div class="tutorial-content">
-                <button class="tutorial-close" onclick="skipTutorial()">✕</button>
-                
-                <div class="tutorial-step" id="tutorialStep1">
-                    <div class="tutorial-title">👋 Welcome to Check-in Chaos!</div>
-                    <div class="tutorial-text">
-                        You're the marina manager. Guests arrive at the gate needing items for their charter boats.<br><br>
-                        <strong>Your job:</strong> Get them what they need before they leave angry!
-                    </div>
-                    <div class="tutorial-visual">🚶 → 📦 → ⛵</div>
-                </div>
-                
-                <div class="tutorial-step" id="tutorialStep2" style="display: none;">
-                    <div class="tutorial-title">🎮 How to Move</div>
-                    <div class="tutorial-text">
-                        Use <span class="key">↑</span> <span class="key">↓</span> <span class="key">←</span> <span class="key">→</span> or <span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> to move around the marina.
-                    </div>
-                    <div class="tutorial-visual">⬆️⬇️⬅️➡️</div>
-                </div>
-                
-                <div class="tutorial-step" id="tutorialStep3" style="display: none;">
-                    <div class="tutorial-title">📦 Pick Up & Deliver</div>
-                    <div class="tutorial-text">
-                        Look at what guests need (shown above their head).<br><br>
-                        Go to <strong>STORAGE</strong> or <strong>TOYS</strong> area and press <span class="key">SPACE</span> to pick up items.<br><br>
-                        Walk to the guest and press <span class="key">SPACE</span> to deliver!
-                    </div>
-                    <div class="tutorial-visual">🦺🤿🛶 → 😊</div>
-                </div>
-                
-                <div class="tutorial-step" id="tutorialStep4" style="display: none;">
-                    <div class="tutorial-title">📞 Answer the Phone!</div>
-                    <div class="tutorial-text">
-                        When the phone rings, run to the <strong>OFFICE</strong> and press <span class="key">SPACE</span> to answer.<br><br>
-                        Miss a call or deliver the wrong item = lose a ⭐<br>
-                        Lose all 5 stars = Game Over!
-                    </div>
-                    <div class="tutorial-visual">📞 → 🏢 → ✅</div>
-                </div>
-                
-                <div class="tutorial-step" id="tutorialStep5" style="display: none;">
-                    <div class="tutorial-title">⚓ Floatist Bonus</div>
-                    <div class="tutorial-text">
-                        Every <strong>10 check-ins</strong> earns you a Floatist bonus!<br><br>
-                        Press <span class="key">F</span> to activate:<br>
-                        • See ALL guest requests at once<br>
-                        • Pick up ALL items in one grab<br>
-                        • Deliver to ALL guests at once!
-                    </div>
-                    <div class="tutorial-visual">⚓ SUPERPOWER! ⚓</div>
-                </div>
-                
-                <div class="tutorial-step" id="tutorialStep6" style="display: none;">
-                    <div class="tutorial-title">🏪 The Shop</div>
-                    <div class="tutorial-text">
-                        Earn 🪙 coins for each check-in!<br><br>
-                        Walk to the <strong>purple SHOP</strong> building and press <span class="key">E</span> to buy:<br>
-                        • 📞 Office Assistant (handles phone calls)<br>
-                        • 🏃 Speed Upgrade (move 2x faster!)<br>
-                        • ⚓ Floatist (permanent bonus mode!)
-                    </div>
-                    <div class="tutorial-visual">🪙 → 🏪 → 🚀</div>
-                </div>
-                
-                <div class="tutorial-step" id="tutorialStep7" style="display: none;">
-                    <div class="tutorial-title">🏆 Ready to Play!</div>
-                    <div class="tutorial-text">
-                        Check in as many guests as you can!<br><br>
-                        Your score goes on the <strong>global leaderboard</strong>.<br><br>
-                        Good luck, Captain!
-                    </div>
-                    <div class="tutorial-visual">⛵🌊⛵🌊⛵</div>
-                </div>
-                
-                <div class="tutorial-nav">
-                    <button class="tutorial-btn" id="tutorialPrev" onclick="prevTutorialStep()" style="visibility: hidden;">← BACK</button>
-                    <span class="tutorial-dots" id="tutorialDots">● ○ ○ ○ ○ ○ ○</span>
-                    <button class="tutorial-btn tutorial-btn-primary" id="tutorialNext" onclick="nextTutorialStep()">NEXT →</button>
-                </div>
-                
-                <button class="tutorial-skip" onclick="skipTutorial()">Skip Tutorial</button>
-            </div>
-        </div>
-        
         <!-- Shop Popup -->
         <div class="shop-popup" id="shopPopup" style="display: none;">
             <div class="shop-content">
@@ -1754,6 +1668,92 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Overlay (outside game-container for proper z-index) -->
+    <div class="tutorial-overlay" id="tutorialOverlay" style="display: none;">
+        <div class="tutorial-content">
+            <button class="tutorial-close" onclick="skipTutorial()">✕</button>
+            
+            <div class="tutorial-step" id="tutorialStep1">
+                <div class="tutorial-title">👋 Welcome to Check-in Chaos!</div>
+                <div class="tutorial-text">
+                    You're the marina manager. Guests arrive at the gate needing items for their charter boats.<br><br>
+                    <strong>Your job:</strong> Get them what they need before they leave angry!
+                </div>
+                <div class="tutorial-visual">🚶 → 📦 → ⛵</div>
+            </div>
+            
+            <div class="tutorial-step" id="tutorialStep2" style="display: none;">
+                <div class="tutorial-title">🎮 How to Move</div>
+                <div class="tutorial-text">
+                    Use <span class="key">↑</span> <span class="key">↓</span> <span class="key">←</span> <span class="key">→</span> or <span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> to move around the marina.
+                </div>
+                <div class="tutorial-visual">⬆️⬇️⬅️➡️</div>
+            </div>
+            
+            <div class="tutorial-step" id="tutorialStep3" style="display: none;">
+                <div class="tutorial-title">📦 Pick Up & Deliver</div>
+                <div class="tutorial-text">
+                    Look at what guests need (shown above their head).<br><br>
+                    Go to <strong>STORAGE</strong> or <strong>TOYS</strong> area and press <span class="key">SPACE</span> to pick up items.<br><br>
+                    Walk to the guest and press <span class="key">SPACE</span> to deliver!
+                </div>
+                <div class="tutorial-visual">🦺🤿🛶 → 😊</div>
+            </div>
+            
+            <div class="tutorial-step" id="tutorialStep4" style="display: none;">
+                <div class="tutorial-title">📞 Answer the Phone!</div>
+                <div class="tutorial-text">
+                    When the phone rings, run to the <strong>OFFICE</strong> and press <span class="key">SPACE</span> to answer.<br><br>
+                    Miss a call or deliver the wrong item = lose a ⭐<br>
+                    Lose all 5 stars = Game Over!
+                </div>
+                <div class="tutorial-visual">📞 → 🏢 → ✅</div>
+            </div>
+            
+            <div class="tutorial-step" id="tutorialStep5" style="display: none;">
+                <div class="tutorial-title">⚓ Floatist Bonus</div>
+                <div class="tutorial-text">
+                    Every <strong>10 check-ins</strong> earns you a Floatist bonus!<br><br>
+                    Press <span class="key">F</span> to activate:<br>
+                    • See ALL guest requests at once<br>
+                    • Pick up ALL items in one grab<br>
+                    • Deliver to ALL guests at once!
+                </div>
+                <div class="tutorial-visual">⚓ SUPERPOWER! ⚓</div>
+            </div>
+            
+            <div class="tutorial-step" id="tutorialStep6" style="display: none;">
+                <div class="tutorial-title">🏪 The Shop</div>
+                <div class="tutorial-text">
+                    Earn 🪙 coins for each check-in!<br><br>
+                    Walk to the <strong>purple SHOP</strong> building and press <span class="key">E</span> to buy:<br>
+                    • 📞 Office Assistant (handles phone calls)<br>
+                    • 🏃 Speed Upgrade (move 2x faster!)<br>
+                    • ⚓ Floatist (permanent bonus mode!)
+                </div>
+                <div class="tutorial-visual">🪙 → 🏪 → 🚀</div>
+            </div>
+            
+            <div class="tutorial-step" id="tutorialStep7" style="display: none;">
+                <div class="tutorial-title">🏆 Ready to Play!</div>
+                <div class="tutorial-text">
+                    Check in as many guests as you can!<br><br>
+                    Your score goes on the <strong>global leaderboard</strong>.<br><br>
+                    Good luck, Captain!
+                </div>
+                <div class="tutorial-visual">⛵🌊⛵🌊⛵</div>
+            </div>
+            
+            <div class="tutorial-nav">
+                <button class="tutorial-btn" id="tutorialPrev" onclick="prevTutorialStep()" style="visibility: hidden;">← BACK</button>
+                <span class="tutorial-dots" id="tutorialDots">● ○ ○ ○ ○ ○ ○</span>
+                <button class="tutorial-btn tutorial-btn-primary" id="tutorialNext" onclick="nextTutorialStep()">NEXT →</button>
+            </div>
+            
+            <button class="tutorial-skip" onclick="skipTutorial()">Skip Tutorial</button>
         </div>
     </div>
 
