@@ -501,6 +501,27 @@
             50% { transform: scale(1.05); }
         }
         
+        /* How to Play button in game */
+        .how-to-play-btn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 7px;
+            z-index: 15;
+            cursor: pointer;
+            border: 1px solid #666;
+            transition: all 0.2s;
+            display: none;
+        }
+        
+        .how-to-play-btn:hover {
+            background: rgba(0, 151, 190, 0.8);
+            border-color: var(--floatist-blue);
+        }
+        
         /* Floatist permanent indicator */
         .floatist-permanent {
             position: absolute;
@@ -1433,6 +1454,10 @@
         
         <div class="shop-hint" id="shopHint">
             🏪 SHOP [E]
+        </div>
+        
+        <div class="how-to-play-btn" id="howToPlayInGame" onclick="showTutorialFromGame()">
+            ❓ How to Play
         </div>
         
         <div class="floatist-bonus-active" id="floatistBonusActive">
@@ -3271,13 +3296,13 @@
             const step3 = document.getElementById('tutorialStep3');
             step3.querySelector('.tutorial-text').innerHTML = 
                 'Look at what guests need (shown above their head).<br><br>' +
-                'Go to <strong>STORAGE</strong> or <strong>TOYS</strong> area and tap the <strong>PICKUP</strong> button to pick up items.<br><br>' +
-                'Walk to the guest and tap <strong>PICKUP</strong> to deliver!';
+                'Go to <strong>STORAGE</strong> or <strong>TOYS</strong> area and tap <strong>ACTION</strong> button to pick up items.<br><br>' +
+                'Walk to the guest and tap <strong>ACTION</strong> to deliver!';
             
             // Step 4 - Answer Phone
             const step4 = document.getElementById('tutorialStep4');
             step4.querySelector('.tutorial-text').innerHTML = 
-                'When the phone rings, run to the <strong>OFFICE</strong> and tap <strong>PICKUP</strong> to answer.<br><br>' +
+                'When the phone rings, run to the <strong>OFFICE</strong> and tap <strong>ACTION</strong> to answer.<br><br>' +
                 'Miss a call or deliver the wrong item = lose a ⭐<br>' +
                 'Lose all 5 stars = Game Over!';
             
@@ -3347,6 +3372,11 @@
             gameState.gamePaused = false;
             // Mark tutorial as seen in localStorage
             localStorage.setItem('floatistTutorialSeen', 'true');
+        }
+        
+        function showTutorialFromGame() {
+            // Show tutorial without resetting localStorage (just for viewing)
+            showTutorial();
         }
         
         function shouldShowTutorial() {
@@ -3620,6 +3650,7 @@
             document.getElementById('newBoatNotification').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
             document.getElementById('tutorialOverlay').style.display = 'none';
+            document.getElementById('howToPlayInGame').style.display = 'none';
             
             // Save score and reload leaderboard
             await saveScore(gameState.playerName, gameState.checkedIn);
@@ -3792,6 +3823,7 @@
             document.getElementById('assistantActive').style.display = 'none';
             document.getElementById('tutorialOverlay').style.display = 'none';
             document.getElementById('floatistBonusActive').style.display = 'none';
+            document.getElementById('howToPlayInGame').style.display = 'block';
             guestSpawnTimer = 0; // Reset spawn timer
             lastTime = 0; // Reset timing to prevent lag issues
             
