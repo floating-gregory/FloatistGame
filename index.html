@@ -2876,8 +2876,10 @@
             // Check if near an item spawn to pick up
             if (gameState.floatistBonusActive) {
                 // During bonus: check if near ANY pickup zone, then grab ALL requested items
-                const nearStorage = p.x > 17 * TILE_SIZE && p.x < 23 * TILE_SIZE && p.y > 5 * TILE_SIZE && p.y < 9 * TILE_SIZE;
-                const nearWaterToys = p.x > 2 * TILE_SIZE && p.x < 7 * TILE_SIZE && p.y > 12 * TILE_SIZE && p.y < 16 * TILE_SIZE;
+                // Storage building is at tiles x:13-17, y:2-5, items at y:6-7.5
+                const nearStorage = p.x > 12 * TILE_SIZE && p.x < 18 * TILE_SIZE && p.y > 4 * TILE_SIZE && p.y < 9 * TILE_SIZE;
+                // Water toys is at tiles x:1-5, y:12-14, items at y:14
+                const nearWaterToys = p.x > 0 * TILE_SIZE && p.x < 6 * TILE_SIZE && p.y > 11 * TILE_SIZE && p.y < 16 * TILE_SIZE;
                 
                 if (nearStorage || nearWaterToys) {
                     // Get all items guests currently need
@@ -2890,8 +2892,9 @@
                     neededItems.forEach(item => {
                         const spawn = itemSpawns.find(s => s.itemId === item.id);
                         if (spawn) {
-                            const isInStorage = spawn.x >= 18 && spawn.x <= 21;
-                            const isInWaterToys = spawn.x >= 3 && spawn.x <= 5;
+                            // Storage items are at x 14-17, water toys at x 2-4
+                            const isInStorage = spawn.x >= 14 && spawn.x <= 17;
+                            const isInWaterToys = spawn.x >= 2 && spawn.x <= 5;
                             if ((nearStorage && isInStorage) || (nearWaterToys && isInWaterToys)) {
                                 p.holding.push(item);
                             }
