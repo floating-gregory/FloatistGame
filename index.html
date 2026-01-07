@@ -1762,15 +1762,15 @@
         const TILE_SIZE = 32;
         const MAP_WIDTH = 19;
         const MAP_HEIGHT = 19;
-        const PLAYER_SPEED = 15; // Base movement speed
-        const UPGRADED_PLAYER_SPEED = 20; // Speed after upgrade
-        const GUEST_SPEED = 15; // Guest movement speed
+        const PLAYER_SPEED = 8; // Base movement speed (slower for easier play)
+        const UPGRADED_PLAYER_SPEED = 12; // Speed after upgrade
+        const GUEST_SPEED = 8; // Guest movement speed (slower)
         const SPEED_UPGRADE_COST = 50; // coins to buy speed upgrade
         const GUEST_PATIENCE = 10000; // 10 seconds normally
         const GUEST_PATIENCE_BONUS = 17000; // 17 seconds during Floatist bonus
-        const INITIAL_PHONE_INTERVAL = 20000; // 20 seconds at start
-        const MIN_PHONE_INTERVAL = 8000; // 8 seconds minimum
-        const PHONE_ACCELERATION = 400; // ms faster per guest checked in
+        const INITIAL_PHONE_INTERVAL = 35000; // 35 seconds at start (longer)
+        const MIN_PHONE_INTERVAL = 12000; // 12 seconds minimum (longer)
+        const PHONE_ACCELERATION = 200; // ms faster per guest checked in (gentler curve)
         const PHONE_TIMEOUT = 5000; // 5 seconds to answer
         const FLOATIST_BONUS_DURATION = 7000; // 7 seconds
         const FLOATIST_BONUS_THRESHOLD = 10; // guests needed per bonus
@@ -1782,10 +1782,10 @@
         const ASSISTANT_DURATION = 20000; // 20 seconds
         const TRIAL_OFFER_THRESHOLD = 75; // check-ins before trial offer
         
-        // Spawn timing - faster pacing with quicker acceleration
+        // Spawn timing - gradual acceleration
         const INITIAL_SPAWN_INTERVAL = 5000; // 5 seconds at start
-        const MIN_SPAWN_INTERVAL = 1800; // 1.8 seconds minimum (faster)
-        const SPAWN_ACCELERATION = 120; // ms faster per guest checked in (faster acceleration)
+        const MIN_SPAWN_INTERVAL = 2500; // 2.5 seconds minimum (not too fast)
+        const SPAWN_ACCELERATION = 83; // ~500ms faster every 6 check-ins (83ms × 6 = 498ms)
         
         // ========== MOBILE DETECTION ==========
         // More robust mobile detection - check multiple indicators
@@ -3264,11 +3264,11 @@
                 'Miss a call or deliver the wrong item = lose a ⭐<br>' +
                 'Lose all 5 stars = Game Over!';
             
-            // Step 5 - Floatist Bonus (on mobile, auto-activates or tap action near bonus indicator)
+            // Step 5 - Floatist Bonus (on mobile, tap BOOST button)
             const step5 = document.getElementById('tutorialStep5');
             step5.querySelector('.tutorial-text').innerHTML = 
                 'Every <strong>10 check-ins</strong> earns you a Floatist bonus!<br><br>' +
-                'The bonus activates automatically:<br>' +
+                'Tap the <strong>BOOST</strong> button to activate:<br>' +
                 '• See ALL guest requests at once<br>' +
                 '• Pick up ALL items in one grab<br>' +
                 '• Deliver to ALL guests at once!';
