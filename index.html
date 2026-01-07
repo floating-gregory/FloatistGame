@@ -2923,74 +2923,71 @@
             // Check if near guests/pier to deliver items
             if (p.holding.length > 0) {
                 if (gameState.floatistBonusActive) {
-                    // During bonus: deliver to ALL guests on pier at once
-                    const nearPier = p.x > 11 * TILE_SIZE && p.x < 23 * TILE_SIZE && p.y > 7 * TILE_SIZE && p.y < 16 * TILE_SIZE;
+                    // During bonus: deliver to ALL guests anywhere at once
+                    // No location restriction - just press action to deliver all matching items
+                    let deliveredCount = 0;
+                    let fastDeliveryCount = 0;
                     
-                    if (nearPier) {
-                        let deliveredCount = 0;
-                        let fastDeliveryCount = 0;
-                        
-                        // Try to deliver to all guests
-                        for (let guest of gameState.guests) {
-                            if (guest.needsItem) {
-                                const matchIndex = p.holding.findIndex(h => h.id === guest.needsItem.id);
-                                if (matchIndex !== -1) {
-                                    // Check if this was a fast delivery (under half patience time)
-                                    const halfPatience = GUEST_PATIENCE_BONUS / 2;
-                                    if (guest.patience > halfPatience) {
-                                        fastDeliveryCount++;
-                                    }
-                                    
-                                    // Deliver!
-                                    p.holding.splice(matchIndex, 1);
-                                    guest.needsItem = null;
-                                    guest.satisfied = true;
-                                    gameState.checkedIn++;
-                                    gameState.totalDeliveries++;
-                                    deliveredCount++;
-                                    
-                                    // Award coins (1-2 per delivery)
-                                    const coinsEarned = Math.floor(Math.random() * 2) + 1;
-                                    gameState.coins += coinsEarned;
-                                    
-                                    // Remove guest after short delay
-                                    const guestToRemove = guest;
-                                    setTimeout(() => {
-                                        gameState.guests = gameState.guests.filter(g => g !== guestToRemove);
-                                    }, 500);
+                    // Try to deliver to all guests
+                    for (let guest of gameState.guests) {
+                        if (guest.needsItem) {
+                            const matchIndex = p.holding.findIndex(h => h.id === guest.needsItem.id);
+                            if (matchIndex !== -1) {
+                                // Check if this was a fast delivery (under half patience time)
+                                const halfPatience = GUEST_PATIENCE_BONUS / 2;
+                                if (guest.patience > halfPatience) {
+                                    fastDeliveryCount++;
                                 }
+                                
+                                // Deliver!
+                                p.holding.splice(matchIndex, 1);
+                                guest.needsItem = null;
+                                guest.satisfied = true;
+                                gameState.checkedIn++;
+                                gameState.totalDeliveries++;
+                                deliveredCount++;
+                                
+                                // Award coins (1-2 per delivery)
+                                const coinsEarned = Math.floor(Math.random() * 2) + 1;
+                                gameState.coins += coinsEarned;
+                                
+                                // Remove guest after short delay
+                                const guestToRemove = guest;
+                                setTimeout(() => {
+                                    gameState.guests = gameState.guests.filter(g => g !== guestToRemove);
+                                }, 500);
                             }
+                        }
+                    }
+                    
+                    if (deliveredCount > 0) {
+                        // Show total coins earned
+                        showCoinNotification(deliveredCount);
+                        
+                        // Check for star regain: 3+ guests served fast during bonus
+                        if (fastDeliveryCount >= 3 && gameState.stars < 5) {
+                            regainStar();
                         }
                         
-                        if (deliveredCount > 0) {
-                            // Show total coins earned
-                            showCoinNotification(deliveredCount);
-                            
-                            // Check for star regain: 3+ guests served fast during bonus
-                            if (fastDeliveryCount >= 3 && gameState.stars < 5) {
-                                regainStar();
-                            }
-                            
-                            // Check for bonus earned (capped at MAX_BONUSES)
-                            const newBonusCount = Math.floor(gameState.totalDeliveries / FLOATIST_BONUS_THRESHOLD);
-                            if (newBonusCount > gameState.floatistBonusCount + 1) {
-                                gameState.floatistBonusCount = Math.min(newBonusCount - 1, MAX_BONUSES);
-                            }
-                            
-                            // Check for new boat
-                            checkForNewBoat();
-                            
-                            // Speed up spawn and phone rates
-                            gameState.currentSpawnInterval = Math.max(
-                                MIN_SPAWN_INTERVAL,
-                                INITIAL_SPAWN_INTERVAL - (gameState.checkedIn * SPAWN_ACCELERATION)
-                            );
-                            gameState.currentPhoneInterval = Math.max(
-                                MIN_PHONE_INTERVAL,
-                                INITIAL_PHONE_INTERVAL - (gameState.checkedIn * PHONE_ACCELERATION)
-                            );
-                            return;
+                        // Check for bonus earned (capped at MAX_BONUSES)
+                        const newBonusCount = Math.floor(gameState.totalDeliveries / FLOATIST_BONUS_THRESHOLD);
+                        if (newBonusCount > gameState.floatistBonusCount + 1) {
+                            gameState.floatistBonusCount = Math.min(newBonusCount - 1, MAX_BONUSES);
                         }
+                        
+                        // Check for new boat
+                        checkForNewBoat();
+                        
+                        // Speed up spawn and phone rates
+                        gameState.currentSpawnInterval = Math.max(
+                            MIN_SPAWN_INTERVAL,
+                            INITIAL_SPAWN_INTERVAL - (gameState.checkedIn * SPAWN_ACCELERATION)
+                        );
+                        gameState.currentPhoneInterval = Math.max(
+                            MIN_PHONE_INTERVAL,
+                            INITIAL_PHONE_INTERVAL - (gameState.checkedIn * PHONE_ACCELERATION)
+                        );
+                        return;
                     }
                 } else {
                     // Normal mode: deliver to one guest at a time
