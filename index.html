@@ -1763,9 +1763,9 @@
         const TILE_SIZE = 32;
         const MAP_WIDTH = 19;
         const MAP_HEIGHT = 19;
-        const PLAYER_SPEED = 7; // Base movement speed (slower for easier play)
-        const UPGRADED_PLAYER_SPEED = 12; // Speed after upgrade
-        const GUEST_SPEED = 7; // Guest movement speed (slower)
+        const PLAYER_SPEED = 5; // Base movement speed
+        const UPGRADED_PLAYER_SPEED = 8; // Speed after upgrade
+        const GUEST_SPEED = 5; // Guest movement speed
         const SPEED_UPGRADE_COST = 50; // coins to buy speed upgrade
         const GUEST_PATIENCE = 10000; // 10 seconds normally
         const GUEST_PATIENCE_BONUS = 17000; // 17 seconds during Floatist bonus
@@ -1985,6 +1985,14 @@
         const ctx = canvas.getContext('2d');
         ctx.imageSmoothingEnabled = false;
         
+        // Offscreen canvas for caching static background (performance optimization)
+        const bgCanvas = document.createElement('canvas');
+        bgCanvas.width = canvas.width;
+        bgCanvas.height = canvas.height;
+        const bgCtx = bgCanvas.getContext('2d');
+        bgCtx.imageSmoothingEnabled = false;
+        let backgroundCached = false;
+        
         // Load Floatist logo for in-game display
         const floatistLogoImg = new Image();
         floatistLogoImg.src = document.getElementById('menuLogo').src;
@@ -2012,52 +2020,41 @@
         }
         
         function drawMap() {
-            const time = Date.now() * 0.001;
+            // Simple static water background (much faster than animated)
+            ctx.fillStyle = '#4a90a4';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Water background with animated waves
-            for (let y = 0; y < canvas.height; y += 8) {
-                for (let x = 0; x < canvas.width; x += 8) {
-                    const wave1 = Math.sin((x * 0.05) + (y * 0.03) + time) * 0.5 + 0.5;
-                    const wave2 = Math.sin((x * 0.03) - (y * 0.05) + time * 1.3) * 0.3;
-                    const brightness = 0.4 + wave1 * 0.2 + wave2 * 0.1;
-                    const r = Math.floor(74 * brightness);
-                    const g = Math.floor(144 * brightness + 20);
-                    const b = Math.floor(180 * brightness + 30);
-                    ctx.fillStyle = `rgb(${r},${g},${b})`;
-                    ctx.fillRect(x, y, 8, 8);
+            // Add some static water texture
+            ctx.fillStyle = 'rgba(90, 160, 180, 0.5)';
+            for (let y = 0; y < canvas.height; y += 16) {
+                for (let x = 0; x < canvas.width; x += 16) {
+                    if ((x + y) % 32 === 0) {
+                        ctx.fillRect(x, y, 8, 8);
+                    }
                 }
             }
             
-            // Draw some water sparkles - adjusted for 19x19
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            for (let i = 0; i < 15; i++) {
-                const sparkleX = ((i * 97 + Math.floor(time * 50)) % 300) + 280;
-                const sparkleY = ((i * 73 + Math.floor(time * 30)) % 250) + 300;
-                if (sparkleX > 280) {
-                    ctx.fillRect(sparkleX, sparkleY, 3, 3);
-                }
+            // Static water sparkles - adjusted for 19x19
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            for (let i = 0; i < 10; i++) {
+                const sparkleX = ((i * 97) % 200) + 320;
+                const sparkleY = ((i * 73) % 200) + 320;
+                ctx.fillRect(sparkleX, sparkleY, 3, 3);
             }
             
             // Sandy beach edge - adjusted for 19x19
             ctx.fillStyle = '#e8d4a8';
-            drawPixelRect(7 * TILE_SIZE, 7 * TILE_SIZE, TILE_SIZE * 2, TILE_SIZE, '#e8d4a8');
-            drawPixelRect(8 * TILE_SIZE, 6 * TILE_SIZE, TILE_SIZE, TILE_SIZE * 2, '#e8d4a8');
+            ctx.fillRect(7 * TILE_SIZE, 7 * TILE_SIZE, TILE_SIZE * 2, TILE_SIZE);
+            ctx.fillRect(8 * TILE_SIZE, 6 * TILE_SIZE, TILE_SIZE, TILE_SIZE * 2);
             
-            // Main land area (grass) with gradient
-            const grassGradient = ctx.createLinearGradient(0, 0, 0, 19 * TILE_SIZE);
-            grassGradient.addColorStop(0, '#8bc34a');
-            grassGradient.addColorStop(0.5, '#7cb342');
-            grassGradient.addColorStop(1, '#689f38');
-            ctx.fillStyle = grassGradient;
-            ctx.fillRect(0, 0, 8 * TILE_SIZE, 19 * TILE_SIZE);
-            
+            // Main land area (grass) - simple solid color for performance
             ctx.fillStyle = '#7cb342';
-            drawPixelRect(8 * TILE_SIZE, 0, 11 * TILE_SIZE, 8 * TILE_SIZE, '#7cb342');
+            ctx.fillRect(0, 0, 8 * TILE_SIZE, 19 * TILE_SIZE);
+            ctx.fillRect(8 * TILE_SIZE, 0, 11 * TILE_SIZE, 8 * TILE_SIZE);
             
-            // Grass texture with varied shades (deterministic positions for no strobing)
+            // Reduced grass texture (fewer iterations for performance)
             const grassColors = ['#689f38', '#558b2f', '#7cb342', '#9ccc65'];
-            for (let i = 0; i < 180; i++) {
-                // Use deterministic pseudo-random based on index
+            for (let i = 0; i < 60; i++) {
                 const gx = ((i * 97 + 13) % (8 * TILE_SIZE - 4)) + 2;
                 const gy = ((i * 53 + 7) % (19 * TILE_SIZE - 6)) + 2;
                 const colorIdx = i % grassColors.length;
@@ -2065,7 +2062,7 @@
                 ctx.fillStyle = grassColors[colorIdx];
                 ctx.fillRect(gx, gy, 2, height);
             }
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 40; i++) {
                 const gx = 8 * TILE_SIZE + ((i * 83 + 11) % (10 * TILE_SIZE - 4)) + 2;
                 const gy = ((i * 47 + 3) % (7 * TILE_SIZE - 6)) + 2;
                 const colorIdx = (i + 2) % grassColors.length;
@@ -2074,9 +2071,9 @@
                 ctx.fillRect(gx, gy, 2, height);
             }
             
-            // Flowers scattered on grass (already deterministic)
+            // Reduced flowers (fewer for performance)
             const flowerColors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6b9d'];
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 10; i++) {
                 const fx = (i * 37) % (7 * TILE_SIZE) + 10;
                 const fy = (i * 53) % (17 * TILE_SIZE) + 32;
                 ctx.fillStyle = flowerColors[i % flowerColors.length];
@@ -2140,18 +2137,7 @@
             ctx.beginPath();
             ctx.arc((office.x + 2.1) * TILE_SIZE, (office.y + office.h - 0.5) * TILE_SIZE, 3, 0, Math.PI * 2);
             ctx.fill();
-            // Phone indicator
-            if (gameState.phoneRinging) {
-                const phoneX = (office.x + 3.2) * TILE_SIZE;
-                const phoneY = (office.y + 1.2) * TILE_SIZE;
-                // Ringing effect
-                ctx.fillStyle = `rgba(255,0,0,${0.5 + Math.sin(time * 10) * 0.3})`;
-                ctx.beginPath();
-                ctx.arc(phoneX + 10, phoneY + 10, 15 + Math.sin(time * 15) * 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.font = '20px Arial';
-                ctx.fillText('📞', phoneX, phoneY + 20);
-            }
+            // Phone indicator - NOTE: This is dynamic and drawn separately in drawPhoneIndicator()
             // Label
             ctx.fillStyle = '#fff';
             ctx.font = '10px "Press Start 2P"';
@@ -2349,8 +2335,8 @@
         }
         
         function drawBoat(x, y, id) {
-            const time = Date.now() * 0.001;
-            const bob = Math.sin(time + id) * 2;
+            // Static boats (no animation for performance)
+            const bob = 0;
             
             // Water reflection
             ctx.fillStyle = 'rgba(255,255,255,0.1)';
@@ -2597,9 +2583,39 @@
             document.getElementById('shopHint').style.display = nearShop ? 'block' : 'none';
         }
         
+        function drawPhoneIndicator() {
+            if (gameState.phoneRinging) {
+                const office = mapLayout.office;
+                const phoneX = (office.x + 3.2) * TILE_SIZE;
+                const phoneY = (office.y + 1.2) * TILE_SIZE;
+                // Simple pulsing effect
+                const pulse = (Date.now() % 500) < 250 ? 1 : 0.7;
+                ctx.fillStyle = `rgba(255,0,0,${pulse * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(phoneX + 10, phoneY + 10, 15, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.font = '20px Arial';
+                ctx.fillText('📞', phoneX, phoneY + 20);
+            }
+        }
+        
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawMap();
+            
+            // Cache the static background on first render
+            if (!backgroundCached) {
+                drawMap();
+                // Copy to background canvas
+                bgCtx.drawImage(canvas, 0, 0);
+                backgroundCached = true;
+            } else {
+                // Use cached background
+                ctx.drawImage(bgCanvas, 0, 0);
+            }
+            
+            // Draw dynamic elements on top
+            drawPhoneIndicator();
+            drawItemSpawns();
             drawGuests();
             drawPlayer();
             drawUI();
@@ -3566,6 +3582,9 @@
             if (boatsEarned > activeBoatCount && activeBoatCount < maxBoats) {
                 activeBoatCount = Math.min(boatsEarned, maxBoats);
                 
+                // Reset background cache so new boat is drawn
+                backgroundCached = false;
+                
                 // Show notification
                 document.getElementById('newBoatNumber').textContent = activeBoatCount;
                 const notification = document.getElementById('newBoatNotification');
@@ -3725,6 +3744,9 @@
         function startGame(name) {
             // Reset boat count
             activeBoatCount = 5;
+            
+            // Reset background cache so boats are redrawn correctly
+            backgroundCached = false;
             
             gameState = {
                 screen: 'game',
