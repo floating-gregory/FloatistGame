@@ -1113,8 +1113,9 @@
             .game-container {
                 position: fixed;
                 top: 0;
-                left: 50%;
-                transform: translateX(-50%);
+                left: 0;
+                right: 0;
+                margin: 0 auto;
                 width: min(100vw, calc(100dvh - 45vh)); /* Square based on smaller dimension */
                 height: min(100vw, calc(100dvh - 45vh));
                 max-width: 55dvh; /* Ensure room for controls */
@@ -3010,9 +3011,10 @@
                 container.style.maxWidth = '55vw';
                 container.style.height = `${vh - 10}px`;
                 container.style.left = '0';
-                container.style.transform = 'none';
+                container.style.right = 'auto';
+                container.style.margin = '0';
             } else {
-                // Portrait mode
+                // Portrait mode - center with margin auto, no transform
                 controls.style.width = '100%';
                 controls.style.left = '0';
                 controls.style.height = `${controlHeight}px`;
@@ -3024,8 +3026,9 @@
                 container.style.height = `${gameSize}px`;
                 container.style.maxWidth = `${gameSize}px`;
                 container.style.maxHeight = `${gameSize}px`;
-                container.style.left = '50%';
-                container.style.transform = 'translateX(-50%)';
+                container.style.left = '0';
+                container.style.right = '0';
+                container.style.margin = '0 auto';
             }
         }
         
@@ -3055,7 +3058,8 @@
                     container.style.maxWidth = '';
                     container.style.maxHeight = '';
                     container.style.left = '';
-                    container.style.transform = '';
+                    container.style.right = '';
+                    container.style.margin = '';
                 }
                 console.log('Mobile controls hidden, game-active removed');
             }
